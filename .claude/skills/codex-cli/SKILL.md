@@ -14,19 +14,19 @@ description: >
 
 Invoke OpenAI Codex CLI in exec mode as a sub-agent for independent code analysis.
 
-**Auth**: ChatGPT login (cached). **Binary**: `codex` (v0.112.0+).
+**Auth**: ChatGPT login (cached). **Binary**: `codex` (latest recommended).
 
 ## Core Invocation Patterns
 
 ### Pattern 1: Read-Only Analysis (~5-15s)
 
 ```bash
-codex exec --ephemeral --full-auto -s read-only -o /tmp/result.txt \
+codex exec --ephemeral -s read-only -o /tmp/result.txt \
   "Review src/models/user.py for logic errors. Output as markdown."
 cat /tmp/result.txt
 ```
 
-Flags: `--ephemeral` (no session files), `--full-auto` (no approval prompts), `-s read-only` (safe sandbox), `-o FILE` (clean output to file).
+Flags: `--ephemeral` (no session files), `-s read-only` (safe sandbox), `-o FILE` (clean output to file). Exec mode is non-interactive — no approval prompts needed.
 
 ### Pattern 2: Structured JSON Output
 
@@ -44,7 +44,7 @@ cat > /tmp/schema.json << 'SCHEMA'
 }
 SCHEMA
 
-codex exec --ephemeral --full-auto -s read-only --json \
+codex exec --ephemeral -s read-only --json \
   --output-schema /tmp/schema.json \
   -o /tmp/analysis.txt \
   "Analyze src/services/order_processor.py for potential bugs"
@@ -66,7 +66,7 @@ Review targets: `--base BRANCH`, `--commit SHA`, `--uncommitted`.
 ### Pattern 4: Inline Code via Heredoc
 
 ```bash
-codex exec --ephemeral --full-auto -s read-only -o /tmp/result.txt \
+codex exec --ephemeral -s read-only -o /tmp/result.txt \
   "$(cat <<'EOF'
 Review this module for edge cases and logic errors:
 
@@ -83,7 +83,7 @@ cat /tmp/result.txt
 ### Pattern 5: Low-Cost Quick Query
 
 ```bash
-codex exec --ephemeral --full-auto -s read-only \
+codex exec --ephemeral -s read-only \
   -c 'model_reasoning_effort="low"' \
   -o /tmp/result.txt \
   "Quick: is this function O(n) or O(n^2)? $(cat algo.py)"
@@ -100,7 +100,7 @@ codex exec --ephemeral --full-auto -s read-only \
 | `--json` | JSONL events to stdout (for programmatic parsing) |
 | `--output-schema FILE` | Enforce JSON Schema on response |
 | `-c key=value` | Config override (e.g., `model_reasoning_effort="low"`) |
-| `--full-auto` | **ALWAYS USE** — auto-approve all actions, no approval prompts |
+| `--full-auto` | Auto-approve + workspace-write sandbox (use for write tasks only, NOT with `-s read-only`) |
 
 ## JSONL Output Parsing (`--json`)
 
@@ -131,7 +131,7 @@ Key event types in JSONL:
 A teammate invokes Codex for cross-verification via Bash tool:
 
 ```bash
-codex exec --ephemeral --full-auto -s read-only -o /tmp/codex_review.md \
+codex exec --ephemeral -s read-only -o /tmp/codex_review.md \
   "$(cat <<'PROMPT'
 Review this implementation for correctness, edge cases, and security:
 

@@ -13,7 +13,7 @@
 | `-c key=value` | Config override (TOML) | `-c 'model_reasoning_effort="low"'` |
 | `-C DIR` | Working directory | Requires `--skip-git-repo-check` if not git repo |
 | `--add-dir DIR` | Additional writable dirs | `-add-dir /data` |
-| `--full-auto` | Auto-approve all actions | Alias for `-a on-request -s workspace-write` |
+| `--full-auto` | Auto-approve + workspace-write | Alias for `-a on-request -s workspace-write` (**overrides** `-s`, do NOT combine with `-s read-only`) |
 | `--skip-git-repo-check` | Run outside git repos | Required with `-C` to non-git dirs |
 
 ## Input Methods
