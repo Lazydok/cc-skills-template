@@ -1,0 +1,42 @@
+{
+  "eval_id": 1,
+  "eval_name": "code-review",
+  "prompt": "gemini한테 이 코드 리뷰 좀 받아봐. gemini-cli-workspace/test_sample.py 파일인데 버그랑 보안 이슈 있는지 확인해줘",
+  "assertions": [
+    {
+      "id": "gemini-invoked",
+      "text": "gemini CLI가 실제로 실행되었음 (bash에서 gemini 명령어 호출)",
+      "type": "required"
+    },
+    {
+      "id": "used-timeout",
+      "text": "timeout 명령어로 gemini 호출을 감쌌음",
+      "type": "recommended"
+    },
+    {
+      "id": "used-headless-flags",
+      "text": "-p 플래그와 -o text (또는 -o json) 플래그를 사용함",
+      "type": "required"
+    },
+    {
+      "id": "used-yolo-flag",
+      "text": "-y 플래그를 사용하여 도구 자동 승인",
+      "type": "recommended"
+    },
+    {
+      "id": "stderr-suppressed",
+      "text": "2>/dev/null로 stderr를 억제함",
+      "type": "recommended"
+    },
+    {
+      "id": "review-output-saved",
+      "text": "gemini의 리뷰 결과가 파일로 저장됨",
+      "type": "required"
+    },
+    {
+      "id": "bugs-identified",
+      "text": "리뷰 결과에서 코드의 버그를 1개 이상 식별함",
+      "type": "required"
+    }
+  ]
+}

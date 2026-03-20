@@ -1,0 +1,32 @@
+{
+  "eval_id": 3,
+  "eval_name": "codex-unavailable-fallback-handling",
+  "prompt": "Codex로 이 알고리즘 정확성 검증해줘. 근데 혹시 codex가 설치 안 되어 있으면 어떻게 해야하는지도 알려줘.",
+  "assertions": [
+    {
+      "id": "c3-availability-check",
+      "text": "command -v codex 또는 which codex로 가용성 체크를 수행함",
+      "type": "structural"
+    },
+    {
+      "id": "c3-install-instructions",
+      "text": "npm install -g @openai/codex 설치 방법이 포함됨",
+      "type": "structural"
+    },
+    {
+      "id": "c3-conditional-execution",
+      "text": "if/else 분기로 설치 여부에 따라 다른 동작을 수행함",
+      "type": "structural"
+    },
+    {
+      "id": "c3-verification-command",
+      "text": "설치된 경우 codex exec로 알고리즘 검증 명령어가 포함됨",
+      "type": "structural"
+    },
+    {
+      "id": "c3-fallback-strategy",
+      "text": "미설치 시 대안 전략(설치 안내 또는 Claude 자체 분석)이 제시됨",
+      "type": "quality"
+    }
+  ]
+}

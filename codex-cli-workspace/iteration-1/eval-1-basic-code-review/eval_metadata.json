@@ -1,0 +1,37 @@
+{
+  "eval_id": 1,
+  "eval_name": "basic-code-review-with-codex",
+  "prompt": "src/utils/calculator.py 파일을 Codex로 리뷰해줘. 로직 오류나 엣지 케이스 문제가 있는지 확인해줘.",
+  "assertions": [
+    {
+      "id": "c1-exec-mode",
+      "text": "codex exec 명령어를 사용함 (interactive가 아닌 non-interactive exec 모드)",
+      "type": "structural"
+    },
+    {
+      "id": "c1-ephemeral",
+      "text": "--ephemeral 플래그가 포함됨",
+      "type": "structural"
+    },
+    {
+      "id": "c1-read-only",
+      "text": "-s read-only 샌드박스 모드가 사용됨",
+      "type": "structural"
+    },
+    {
+      "id": "c1-output-file",
+      "text": "-o 플래그로 결과를 파일에 저장함",
+      "type": "structural"
+    },
+    {
+      "id": "c1-heredoc-or-cat",
+      "text": "heredoc 또는 $(cat file) 패턴으로 파일 내용을 프롬프트에 포함",
+      "type": "quality"
+    },
+    {
+      "id": "c1-timeout",
+      "text": "timeout 래핑이 포함됨",
+      "type": "quality"
+    }
+  ]
+}

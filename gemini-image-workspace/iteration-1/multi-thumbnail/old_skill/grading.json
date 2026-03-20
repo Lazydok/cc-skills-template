@@ -1,0 +1,21 @@
+{
+  "eval_name": "multi-thumbnail",
+  "variant": "old_skill",
+  "expectations": [
+    {
+      "text": "multiple-images-created",
+      "passed": false,
+      "evidence": "No images - script crashed"
+    },
+    {
+      "text": "count-param-used",
+      "passed": false,
+      "evidence": "Script failed before -n parameter could be used"
+    },
+    {
+      "text": "correct-output-path",
+      "passed": false,
+      "evidence": "No output produced"
+    }
+  ]
+}
