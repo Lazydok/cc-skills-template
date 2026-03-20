@@ -1,0 +1,186 @@
+{
+  "metadata": {
+    "skill_name": "agent-teams",
+    "skill_path": "/home/lazydok/src/cc-skills-template/.claude/skills/agent-teams",
+    "executor_model": "claude-opus-4-6",
+    "analyzer_model": "claude-opus-4-6",
+    "timestamp": "2026-03-20T00:00:00Z",
+    "evals_run": [1, 2, 3],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "fullstack-feature-auth-api",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 138.7,
+        "tokens": 20728,
+        "tool_calls": 6,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "TeamCreate가 먼저 호출되어 팀이 생성됨", "passed": true, "evidence": "Step 1에서 TeamCreate 호출이 모든 Agent보다 앞에 위치"},
+        {"text": "모든 Agent 호출에 team_name 포함", "passed": true, "evidence": "5개 Agent 모두 team_name=\"auth-feature\""},
+        {"text": "모든 Agent 호출에 name 포함", "passed": true, "evidence": "5개 모두 고유 name 포함"},
+        {"text": "최소 3명 teammate (API/service/test 분리)", "passed": true, "evidence": "5명 스폰"},
+        {"text": "구체적인 파일 경로 포함", "passed": true, "evidence": "각 prompt에 구체적 파일 경로"},
+        {"text": "테스트 전담 teammate 존재", "passed": true, "evidence": "auth-tests 전담"},
+        {"text": "파일 소유권 비겹침", "passed": true, "evidence": "16파일 모두 단일 owner"}
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "fullstack-feature-auth-api",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 7,
+        "total": 7,
+        "time_seconds": 118.8,
+        "tokens": 16459,
+        "tool_calls": 6,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "TeamCreate가 먼저 호출되어 팀이 생성됨", "passed": false, "evidence": "TeamCreate 미사용"},
+        {"text": "모든 Agent 호출에 team_name 포함", "passed": false, "evidence": "Agent 미사용"},
+        {"text": "모든 Agent 호출에 name 포함", "passed": false, "evidence": "Agent 미사용"},
+        {"text": "최소 3명 teammate", "passed": false, "evidence": "단일 에이전트 직접 구현"},
+        {"text": "구체적인 파일 경로 포함", "passed": false, "evidence": "teammate prompt 없음"},
+        {"text": "테스트 전담 teammate 존재", "passed": false, "evidence": "테스트를 소스와 함께 병렬 Write"},
+        {"text": "파일 소유권 비겹침", "passed": false, "evidence": "단일 에이전트가 모든 파일 소유"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "debugging-order-processing-bug",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 132.7,
+        "tokens": 19258,
+        "tool_calls": 4,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "TeamCreate 호출", "passed": true, "evidence": "team_name=\"order-bug-investigation\""},
+        {"text": "team_name + name 포함", "passed": true, "evidence": "5개 Agent 모두 포함"},
+        {"text": "Explore 타입 사용", "passed": true, "evidence": "5명 모두 Explore"},
+        {"text": "타겟 파일 명시", "passed": true, "evidence": "3파일 각각 전담 analyst에 명시"},
+        {"text": "SendMessage findings 공유", "passed": true, "evidence": "analysts→integration-tracer→lead 패턴"},
+        {"text": "결과 종합 과정", "passed": true, "evidence": "Task 6 synthesis + integration-tracer cross-reference"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "debugging-order-processing-bug",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.17,
+        "passed": 1,
+        "failed": 5,
+        "total": 6,
+        "time_seconds": 86.4,
+        "tokens": 12841,
+        "tool_calls": 4,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "TeamCreate 호출", "passed": false, "evidence": "미사용"},
+        {"text": "team_name + name 포함", "passed": false, "evidence": "Agent 미사용"},
+        {"text": "Explore 타입 사용", "passed": false, "evidence": "직접 Read/Grep"},
+        {"text": "타겟 파일 명시", "passed": false, "evidence": "teammate prompt 없음"},
+        {"text": "SendMessage findings 공유", "passed": false, "evidence": "단일 에이전트"},
+        {"text": "결과 종합 과정", "passed": true, "evidence": "단일 에이전트 내 자연 종합"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "code-review-with-codex-xv",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 137.8,
+        "tokens": 28022,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "TeamCreate 호출", "passed": true, "evidence": "team_name=\"pr-review\""},
+        {"text": "다관점 reviewer 2+ 존재", "passed": true, "evidence": "3개: security, perf, correctness"},
+        {"text": "xv-codex 전담 teammate", "passed": true, "evidence": "xv-codex (general-purpose)"},
+        {"text": "Codex CLI 명령어 포함", "passed": true, "evidence": "3개 codex exec 병렬 호출"},
+        {"text": "/tmp/xv/ 패턴 사용", "passed": true, "evidence": "7개 아티팩트 in /tmp/xv/pr-review/"},
+        {"text": "synthesizer 종합", "passed": true, "evidence": "CRITICAL/HIGH/MEDIUM confidence scoring"},
+        {"text": "모든 Agent에 team_name", "passed": true, "evidence": "5개 모두 team_name=\"pr-review\""}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "code-review-with-codex-xv",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 7,
+        "total": 7,
+        "time_seconds": 98.2,
+        "tokens": 13242,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "TeamCreate 호출", "passed": false, "evidence": "미사용"},
+        {"text": "다관점 reviewer 2+ 존재", "passed": false, "evidence": "단일 에이전트 grep 기반 검사"},
+        {"text": "xv-codex 전담 teammate", "passed": false, "evidence": "which codex + 직접 Bash 호출"},
+        {"text": "Codex CLI 명령어 포함", "passed": false, "evidence": "teammate prompt 없음, best-effort Bash"},
+        {"text": "/tmp/xv/ 패턴 사용", "passed": false, "evidence": "아티팩트 패턴 미사용"},
+        {"text": "synthesizer 종합", "passed": false, "evidence": "Phase 6에서 단일 에이전트 종합"},
+        {"text": "모든 Agent에 team_name", "passed": false, "evidence": "Agent 미사용"}
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0},
+      "time_seconds": {"mean": 136.4, "stddev": 2.6, "min": 132.7, "max": 138.7},
+      "tokens": {"mean": 22669, "stddev": 3893, "min": 19258, "max": 28022}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 0.06, "stddev": 0.08, "min": 0.0, "max": 0.17},
+      "time_seconds": {"mean": 101.1, "stddev": 13.6, "min": 86.4, "max": 118.8},
+      "tokens": {"mean": 14181, "stddev": 1593, "min": 12841, "max": 16459}
+    },
+    "delta": {
+      "pass_rate": "+0.94",
+      "time_seconds": "+35.3",
+      "tokens": "+8488"
+    }
+  },
+  "notes": [
+    "with_skill 은 3개 eval 모두에서 100% pass rate 달성 — 스킬이 팀 조직 패턴을 확실히 가이드함",
+    "without_skill은 Agent 도구 자체를 사용하지 않음 — 단일 에이전트가 직접 작업하는 패턴으로 fallback",
+    "with_skill은 평균 +35초, +8.5K 토큰 추가 소비 — 팀 조직 계획의 복잡성 반영",
+    "Eval 2 without_skill에서 '결과 종합' assertion만 pass — 단일 에이전트 내 자연 종합은 가능하므로 비차별적 assertion일 수 있음",
+    "without_skill에서도 Codex CLI를 'which codex'로 확인 후 사용 시도 — 다만 구조화된 artifact 패턴 없이 단순 Bash 호출",
+    "with_skill의 토큰 분산이 큼 (19K-28K) — Eval 3의 cross-verification 패턴이 특히 토큰 소비가 많음"
+  ]
+}

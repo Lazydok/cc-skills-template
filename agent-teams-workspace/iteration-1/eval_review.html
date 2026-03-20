@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "agent-teams", "runs": [{"id": "eval-1-fullstack-feature-with_skill", "prompt": "\ud504\ub85c\uc81d\ud2b8\uc758 src/api/\uc640 src/services/ \ub514\ub809\ud1a0\ub9ac\uc5d0 \uc0c8\ub85c\uc6b4 \uc0ac\uc6a9\uc790 \uc778\uc99d API\ub97c \ucd94\uac00\ud574\uc918. JWT \ud1a0\ud070 \uae30\ubc18\uc73c\ub85c login, register, refresh \uc5d4\ub4dc\ud3ec\uc778\ud2b8 3\uac1c \ub9cc\ub4e4\uace0, \uac01\uac01\uc5d0 \ub300\ud55c \uc720\ub2db \ud14c\uc2a4\ud2b8\ub3c4 \uc791\uc131\ud574\uc918. TypeScript\ub85c \uc791\uc131\ud558\uace0 Express \ud504\ub808\uc784\uc6cc\ud06c \uc0ac\uc6a9.", "eval_id": 1, "outputs": [{"name": "execution_plan.md", "type": "text", "content": "# Execution Plan: JWT Authentication API Feature\n\n## Task Summary\n\nAdd JWT token-based user authentication API with login, register, and refresh endpoints in TypeScript/Express. Includes service layer and unit tests across `src/api/` and `src/services/`.\n\n---\n\n## Team Design\n\n**Team name**: `auth-feature`\n**Team size**: 5 teammates (Full-Stack Feature pattern)\n\n| Teammate | Role | Owned Files |\n|----------|------|-------------|\n| `auth-api` | API route/controller layer | `src/api/auth.controller.ts`, `src/api/auth.routes.ts`, `src/api/middleware/auth.middleware.ts` |\n| `auth-service` | Business logic & JWT operations | `src/services/auth.service.ts`, `src/services/token.service.ts` |\n| `auth-models` | Types, interfaces, validation schemas | `src/models/user.model.ts`, `src/models/auth.types.ts`, `src/models/validation.ts` |\n| `auth-config` | Project setup, dependencies, config | `package.json`, `tsconfig.json`, `src/config/index.ts`, `src/app.ts` |\n| `auth-tests` | All unit tests | `tests/api/auth.controller.test.ts`, `tests/services/auth.service.test.ts`, `tests/services/token.service.test.ts` |\n\n---\n\n## Task Dependency Graph\n\n```\nTask 1: Project Setup & Config       (auth-config)\nTask 2: Types & Models               (auth-models)  \u2014 blocked by Task 1\nTask 3: Auth Service (JWT logic)     (auth-service) \u2014 blocked by Task 2\nTask 4: API Controllers & Routes     (auth-api)     \u2014 blocked by Task 2, Task 3\nTask 5: Unit Tests                   (auth-tests)   \u2014 blocked by Task 3, Task 4\n```\n\n---\n\n## Exact Tool Call Sequence\n\n### Step 1: Create Team\n\n```\nTeamCreate(\n  team_name=\"auth-feature\",\n  description=\"Build JWT-based authentication API with login, register, refresh endpoints in TypeScript/Express. Includes service layer, models, and unit tests.\"\n)\n```\n\n### Step 2: Create Tasks\n\n```\nTaskCreate(\n  subject=\"Project Setup & Config\",\n  description=\"Initialize TypeScript/Express project structure. Create package.json with dependencies (express, jsonwebtoken, bcryptjs, jest, ts-jest, @types/*). Create tsconfig.json. Create src/app.ts with Express app bootstrap. Create src/config/index.ts with JWT secret, token expiry, and bcrypt salt rounds configuration.\"\n)\n# Returns taskId=\"1\"\n\nTaskCreate(\n  subject=\"Types, Interfaces & Models\",\n  description=\"Create TypeScript types and interfaces: User model (id, email, password, name, createdAt), LoginRequest (email, password), RegisterRequest (email, password, name), AuthResponse (accessToken, refreshToken, user), TokenPayload (userId, email), RefreshRequest (refreshToken). Create validation schemas for request bodies. Files: src/models/user.model.ts, src/models/auth.types.ts, src/models/validation.ts\"\n)\n# Returns taskId=\"2\"\n\nTaskCreate(\n  subject=\"Auth Service & Token Service\",\n  description=\"Implement business logic layer. auth.service.ts: register(dto) - hash password, create user, return tokens; login(dto) - verify credentials, return tokens; refreshToken(token) - validate refresh token, issue new pair. token.service.ts: generateAccessToken(payload) using jsonwebtoken with 15m expiry; generateRefreshToken(payload) with 7d expiry; verifyAccessToken(token); verifyRefreshToken(token). Use bcryptjs for password hashing. Files: src/services/auth.service.ts, src/services/token.service.ts\"\n)\n# Returns taskId=\"3\"\n\nTaskCreate(\n  subject=\"API Controllers & Routes\",\n  description=\"Implement Express route handlers. auth.controller.ts: postLogin(req, res) - validate body, call authService.login, return 200 with tokens or 401; postRegister(req, res) - validate body, call authService.register, return 201 with tokens or 409 for duplicate; postRefresh(req, res) - validate body, call authService.refreshToken, return 200 with new tokens or 401. auth.routes.ts: POST /api/auth/login, POST /api/auth/register, POST /api/auth/refresh. auth.middleware.ts: verifyToken middleware that extracts Bearer token from Authorization header and validates via tokenService. Files: src/api/auth.controller.ts, src/api/auth.routes.ts, src/api/middleware/auth.middleware.ts\"\n)\n# Returns taskId=\"4\"\n\nTaskCreate(\n  subject=\"Unit Tests\",\n  description=\"Write comprehensive unit tests using Jest with ts-jest. auth.controller.test.ts: test login success/failure (invalid credentials, missing fields), register success/failure (duplicate email, missing fields), refresh success/failure (expired token, invalid token). auth.service.test.ts: test register creates user and returns tokens, login with valid/invalid credentials, refreshToken with valid/invalid/expired tokens. token.service.test.ts: test generateAccessToken/generateRefreshToken return valid JWT strings, verifyAccessToken/verifyRefreshToken with valid/invalid/expired tokens. Mock dependencies using jest.mock(). Files: tests/api/auth.controller.test.ts, tests/services/auth.service.test.ts, tests/services/token.service.test.ts\"\n)\n# Returns taskId=\"5\"\n```\n\n### Step 3: Set Task Dependencies\n\n```\nTaskUpdate(taskId=\"2\", addBlockedBy=[\"1\"])\nTaskUpdate(taskId=\"3\", addBlockedBy=[\"2\"])\nTaskUpdate(taskId=\"4\", addBlockedBy=[\"2\", \"3\"])\nTaskUpdate(taskId=\"5\", addBlockedBy=[\"3\", \"4\"])\n```\n\n### Step 4: Spawn Teammates\n\n```\nAgent(\n  team_name=\"auth-feature\",\n  name=\"auth-config\",\n  subagent_type=\"general-purpose\",\n  prompt=\"You are setting up a TypeScript/Express project for a JWT authentication API. Create the following files:\\n\\n1. package.json - Include dependencies: express, jsonwebtoken, bcryptjs, uuid. Dev dependencies: typescript, ts-jest, jest, @types/express, @types/jsonwebtoken, @types/bcryptjs, @types/jest, ts-node. Add scripts: build, start, test.\\n\\n2. tsconfig.json - Target ES2020, module commonjs, strict mode, outDir ./dist, rootDir ./src, esModuleInterop true, resolveJsonModule true.\\n\\n3. src/config/index.ts - Export config object with: jwtSecret (from env JWT_SECRET or default 'dev-secret-key'), jwtAccessExpiry ('15m'), jwtRefreshExpiry ('7d'), bcryptSaltRounds (10), port (from env PORT or 3000).\\n\\n4. src/app.ts - Create Express app, use express.json() middleware, import and use auth routes at /api/auth, export app.\\n\\nCreate necessary directories: src/, src/api/, src/api/middleware/, src/services/, src/models/, src/config/, tests/, tests/api/, tests/services/.\\n\\nMark your task as completed when done.\",\n  description=\"Initialize project structure, dependencies, and configuration\"\n)\n\nAgent(\n  team_name=\"auth-feature\",\n  name=\"auth-models\",\n  subagent_type=\"general-purpose\",\n  prompt=\"You are creating TypeScript types, interfaces, and validation for a JWT authentication API. Wait for Task 1 (Project Setup) to complete, then create:\\n\\n1. src/models/user.model.ts - Export interface User { id: string; email: string; password: string; name: string; createdAt: Date; }. Export type UserWithoutPassword = Omit<User, 'password'>.\\n\\n2. src/models/auth.types.ts - Export interfaces: LoginRequest { email: string; password: string; }, RegisterRequest { email: string; password: string; name: string; }, RefreshRequest { refreshToken: string; }, AuthResponse { accessToken: string; refreshToken: string; user: UserWithoutPassword; }, TokenPayload { userId: string; email: string; }.\\n\\n3. src/models/validation.ts - Export validation functions: validateLoginRequest(body: any): { valid: boolean; errors: string[] }, validateRegisterRequest(body: any): { valid: boolean; errors: string[] }, validateRefreshRequest(body: any): { valid: boolean; errors: string[] }. Validate required fields, email format (basic regex), password minimum 8 characters.\\n\\nMark your task as completed when done.\",\n  description=\"Create TypeScript types, interfaces, and request validation\"\n)\n\nAgent(\n  team_name=\"auth-feature\",\n  name=\"auth-service\",\n  subagent_type=\"general-purpose\",\n  prompt=\"You are implementing the authentication business logic layer for a JWT-based auth system in TypeScript. Wait for Task 2 (Types & Models) to complete, then create:\\n\\n1. src/services/token.service.ts - Import jsonwebtoken and config. Export class TokenService with methods: generateAccessToken(payload: TokenPayload): string - sign with config.jwtSecret and expiresIn config.jwtAccessExpiry; generateRefreshToken(payload: TokenPayload): string - sign with config.jwtSecret and expiresIn config.jwtRefreshExpiry; verifyAccessToken(token: string): TokenPayload | null - verify and return payload or null on error; verifyRefreshToken(token: string): TokenPayload | null - verify and return payload or null on error. Export singleton instance.\\n\\n2. src/services/auth.service.ts - Import bcryptjs, uuid, User model, auth types, TokenService. Use an in-memory Map<string, User> as user store (for simplicity). Export class AuthService with methods: async register(dto: RegisterRequest): Promise<AuthResponse> - check duplicate email (throw Error 'Email already registered'), hash password with bcrypt, create User with uuid, store in map, generate tokens, return AuthResponse; async login(dto: LoginRequest): Promise<AuthResponse> - find user by email (throw Error 'Invalid credentials'), compare password with bcrypt (throw Error 'Invalid credentials'), generate tokens, return AuthResponse; async refreshToken(token: string): Promise<AuthResponse> - verify refresh token (throw Error 'Invalid refresh token'), find user by payload.userId (throw Error 'User not found'), generate new token pair, return AuthResponse. Export singleton instance.\\n\\nImport types from src/models/auth.types.ts and src/models/user.model.ts.\\n\\nMark your task as completed when done.\",\n  description=\"Implement auth service with JWT token generation, login, register, and refresh logic\"\n)\n\nAgent(\n  team_name=\"auth-feature\",\n  name=\"auth-api\",\n  subagent_type=\"general-purpose\",\n  prompt=\"You are implementing Express API route handlers for JWT authentication. Wait for Task 2 (Types & Models) AND Task 3 (Auth Service) to complete, then create:\\n\\n1. src/api/auth.controller.ts - Import authService, validation functions, and types. Export class AuthController with methods:\\n   - async postRegister(req: Request, res: Response): Validate request body with validateRegisterRequest. If invalid, return 400 with errors. Try authService.register(req.body). Return 201 with AuthResponse. Catch errors: if 'Email already registered' return 409, else return 500.\\n   - async postLogin(req: Request, res: Response): Validate with validateLoginRequest. If invalid return 400. Try authService.login(req.body). Return 200 with AuthResponse. Catch: if 'Invalid credentials' return 401, else 500.\\n   - async postRefresh(req: Request, res: Response): Validate with validateRefreshRequest. If invalid return 400. Try authService.refreshToken(req.body.refreshToken). Return 200 with AuthResponse. Catch: if 'Invalid refresh token' return 401, else 500.\\n   Export singleton instance.\\n\\n2. src/api/auth.routes.ts - Import Router from express, import authController. Create router. POST /login -> authController.postLogin. POST /register -> authController.postRegister. POST /refresh -> authController.postRefresh. Export router.\\n\\n3. src/api/middleware/auth.middleware.ts - Import tokenService. Export function authMiddleware(req, res, next): Extract Authorization header, check 'Bearer ' prefix, extract token, verify with tokenService.verifyAccessToken. If valid, attach payload to req.user and call next(). If invalid, return 401 { message: 'Unauthorized' }.\\n\\nMark your task as completed when done.\",\n  description=\"Implement Express route handlers and middleware for auth endpoints\"\n)\n\nAgent(\n  team_name=\"auth-feature\",\n  name=\"auth-tests\",\n  subagent_type=\"general-purpose\",\n  prompt=\"You are writing comprehensive unit tests for a JWT authentication API using Jest with TypeScript. Wait for Task 3 (Auth Service) AND Task 4 (API Controllers) to complete, then create:\\n\\n1. tests/services/token.service.test.ts - Test TokenService:\\n   - generateAccessToken returns a valid JWT string\\n   - generateRefreshToken returns a valid JWT string\\n   - verifyAccessToken returns payload for valid token\\n   - verifyAccessToken returns null for invalid token\\n   - verifyAccessToken returns null for expired token (mock jwt.verify to throw TokenExpiredError)\\n   - verifyRefreshToken returns payload for valid token\\n   - verifyRefreshToken returns null for invalid token\\n\\n2. tests/services/auth.service.test.ts - Test AuthService (mock bcryptjs and TokenService):\\n   - register: creates user and returns tokens with user data\\n   - register: throws error for duplicate email\\n   - login: returns tokens for valid credentials\\n   - login: throws 'Invalid credentials' for wrong email\\n   - login: throws 'Invalid credentials' for wrong password\\n   - refreshToken: returns new tokens for valid refresh token\\n   - refreshToken: throws 'Invalid refresh token' for invalid token\\n   - refreshToken: throws 'User not found' when user deleted\\n\\n3. tests/api/auth.controller.test.ts - Test AuthController (mock authService):\\n   - POST /register: 201 with valid body\\n   - POST /register: 400 with missing fields\\n   - POST /register: 409 when email exists\\n   - POST /login: 200 with valid credentials\\n   - POST /login: 400 with missing fields\\n   - POST /login: 401 with invalid credentials\\n   - POST /refresh: 200 with valid refresh token\\n   - POST /refresh: 400 with missing refreshToken\\n   - POST /refresh: 401 with invalid refresh token\\n\\nUse jest.mock() to mock dependencies. Use mockRequest/mockResponse helpers for controller tests. Import actual types from src/models/.\\n\\nAlso create jest.config.ts at project root with: preset 'ts-jest', testEnvironment 'node', roots ['<rootDir>/tests'], moduleFileExtensions ['ts', 'js'].\\n\\nMark your task as completed when done.\",\n  description=\"Write unit tests for auth service, token service, and API controllers\"\n)\n```\n\n### Step 5: Assign Tasks to Teammates\n\n```\nTaskUpdate(taskId=\"1\", owner=\"auth-config\")\nTaskUpdate(taskId=\"2\", owner=\"auth-models\")\nTaskUpdate(taskId=\"3\", owner=\"auth-service\")\nTaskUpdate(taskId=\"4\", owner=\"auth-api\")\nTaskUpdate(taskId=\"5\", owner=\"auth-tests\")\n```\n\n### Step 6: Monitor Progress\n\n```\n# Periodically check task status\nTaskList()\n\n# Check individual tasks if needed\nTaskGet(taskId=\"1\")\nTaskGet(taskId=\"2\")\n# ... etc.\n```\n\n### Step 7: Shutdown Sequence\n\nOnce all tasks are confirmed completed:\n\n```\nSendMessage(type=\"shutdown_request\", recipient=\"auth-config\", content=\"All tasks complete. Thank you.\")\nSendMessage(type=\"shutdown_request\", recipient=\"auth-models\", content=\"All tasks complete. Thank you.\")\nSendMessage(type=\"shutdown_request\", recipient=\"auth-service\", content=\"All tasks complete. Thank you.\")\nSendMessage(type=\"shutdown_request\", recipient=\"auth-api\", content=\"All tasks complete. Thank you.\")\nSendMessage(type=\"shutdown_request\", recipient=\"auth-tests\", content=\"All tasks complete. Thank you.\")\n```\n\nWait for all teammates to shut down, then:\n\n```\nTeamDelete()\n```\n\n---\n\n## File Ownership Matrix\n\n| File | Owner |\n|------|-------|\n| `package.json` | auth-config |\n| `tsconfig.json` | auth-config |\n| `jest.config.ts` | auth-tests |\n| `src/app.ts` | auth-config |\n| `src/config/index.ts` | auth-config |\n| `src/models/user.model.ts` | auth-models |\n| `src/models/auth.types.ts` | auth-models |\n| `src/models/validation.ts` | auth-models |\n| `src/services/auth.service.ts` | auth-service |\n| `src/services/token.service.ts` | auth-service |\n| `src/api/auth.controller.ts` | auth-api |\n| `src/api/auth.routes.ts` | auth-api |\n| `src/api/middleware/auth.middleware.ts` | auth-api |\n| `tests/services/token.service.test.ts` | auth-tests |\n| `tests/services/auth.service.test.ts` | auth-tests |\n| `tests/api/auth.controller.test.ts` | auth-tests |\n\nNo file is owned by more than one teammate -- zero conflict risk.\n\n## Summary of Tool Calls\n\n| # | Tool | Key Parameters |\n|---|------|---------------|\n| 1 | `TeamCreate` | team_name=\"auth-feature\" |\n| 2-6 | `TaskCreate` x5 | One per work stream |\n| 7-10 | `TaskUpdate` x4 | Set `addBlockedBy` dependencies |\n| 11-15 | `Agent` x5 | Each with team_name, name, subagent_type, prompt, description |\n| 16-20 | `TaskUpdate` x5 | Assign `owner` to each task |\n| 21+ | `TaskList` / `TaskGet` | Monitor progress |\n| Final | `SendMessage` x5 | type=\"shutdown_request\" to each teammate |\n| Last | `TeamDelete` | Clean up team resources |\n\n**Total tool calls**: ~26 (excluding monitoring polls)\n"}], "grading": {"expectations": [{"text": "TeamCreate\uac00 \uba3c\uc800 \ud638\ucd9c\ub418\uc5b4 \ud300\uc774 \uc0dd\uc131\ub428", "passed": true, "evidence": "Step 1\uc5d0\uc11c TeamCreate(team_name=\"auth-feature\", ...) \ud638\ucd9c\uc774 \ubaa8\ub4e0 Agent \ud638\ucd9c\ubcf4\ub2e4 \uc55e\uc5d0 \uc704\uce58"}, {"text": "\ubaa8\ub4e0 Agent \ud638\ucd9c\uc5d0 team_name \ud30c\ub77c\ubbf8\ud130\uac00 \ud3ec\ud568\ub428", "passed": true, "evidence": "5\uac1c Agent \ud638\ucd9c \ubaa8\ub450 team_name=\"auth-feature\" \ud3ec\ud568 \ud655\uc778"}, {"text": "\ubaa8\ub4e0 Agent \ud638\ucd9c\uc5d0 name \ud30c\ub77c\ubbf8\ud130\uac00 \ud3ec\ud568\ub428", "passed": true, "evidence": "auth-config, auth-models, auth-service, auth-api, auth-tests 5\uac1c \ubaa8\ub450 name \ud30c\ub77c\ubbf8\ud130 \ud3ec\ud568"}, {"text": "\ucd5c\uc18c 3\uba85\uc758 teammate\uac00 \uc2a4\ud3f0\ub428 (API, service, test \ubd84\ub9ac)", "passed": true, "evidence": "5\uba85 \uc2a4\ud3f0: auth-config, auth-models, auth-service, auth-api, auth-tests"}, {"text": "\uac01 teammate\uc758 prompt\uc5d0 \uad6c\uccb4\uc801\uc778 \ud30c\uc77c \uacbd\ub85c\uc640 \uc791\uc5c5 \ub0b4\uc6a9\uc774 \ud3ec\ud568\ub428", "passed": true, "evidence": "\uac01 prompt\uc5d0 src/api/auth.controller.ts, src/services/auth.service.ts \ub4f1 \uad6c\uccb4\uc801 \ud30c\uc77c \uacbd\ub85c \ubc0f \uc0c1\uc138 \uad6c\ud604 \uc0ac\ud56d \ud3ec\ud568"}, {"text": "\ud14c\uc2a4\ud2b8 \uc804\ub2f4 teammate\uac00 \uc874\uc7ac\ud568", "passed": true, "evidence": "auth-tests teammate\uac00 tests/ \ub514\ub809\ud1a0\ub9ac \uc804\ub2f4, 3\uac1c \ud14c\uc2a4\ud2b8 \ud30c\uc77c \ub2f4\ub2f9"}, {"text": "teammate \uac04 \ud30c\uc77c \uc18c\uc720\uad8c\uc774 \uacb9\uce58\uc9c0 \uc54a\uc74c", "passed": true, "evidence": "File Ownership Matrix\uc5d0\uc11c 16\uac1c \ud30c\uc77c\uc774 \uac01\uac01 \ud558\ub098\uc758 owner\ub9cc \uac00\uc9d0. 'No file is owned by more than one teammate' \uba85\uc2dc"}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1.0}}}, {"id": "eval-1-fullstack-feature-without_skill", "prompt": "\ud504\ub85c\uc81d\ud2b8\uc758 src/api/\uc640 src/services/ \ub514\ub809\ud1a0\ub9ac\uc5d0 \uc0c8\ub85c\uc6b4 \uc0ac\uc6a9\uc790 \uc778\uc99d API\ub97c \ucd94\uac00\ud574\uc918. JWT \ud1a0\ud070 \uae30\ubc18\uc73c\ub85c login, register, refresh \uc5d4\ub4dc\ud3ec\uc778\ud2b8 3\uac1c \ub9cc\ub4e4\uace0, \uac01\uac01\uc5d0 \ub300\ud55c \uc720\ub2db \ud14c\uc2a4\ud2b8\ub3c4 \uc791\uc131\ud574\uc918. TypeScript\ub85c \uc791\uc131\ud558\uace0 Express \ud504\ub808\uc784\uc6cc\ud06c \uc0ac\uc6a9.", "eval_id": 1, "outputs": [{"name": "execution_plan.md", "type": "text", "content": "# Execution Plan: JWT Authentication API (Without Skill)\n\n## Task Summary\nAdd a JWT-based user authentication API with `login`, `register`, and `refresh` endpoints under `src/api/` and `src/services/`, plus unit tests. TypeScript + Express.\n\n---\n\n## Phase 0: Project Reconnaissance (Parallel)\n\nAll three calls run in parallel since they are independent.\n\n### Call 1: Glob \u2014 Check existing project structure\n```\nTool: Glob\npattern: \"**/*.{ts,js,json}\"\npath: \"/home/lazydok/src/cc-skills-template\"\n```\n\n### Call 2: Bash \u2014 Check for existing package.json\n```\nTool: Bash\ncommand: \"cat /home/lazydok/src/cc-skills-template/package.json 2>/dev/null || echo 'No package.json found'\"\n```\n\n### Call 3: Bash \u2014 Check for existing tsconfig.json\n```\nTool: Bash\ncommand: \"cat /home/lazydok/src/cc-skills-template/tsconfig.json 2>/dev/null || echo 'No tsconfig.json found'\"\n```\n\n**Decision point:** If `package.json` and `tsconfig.json` don't exist, we must scaffold them. If they do, we adapt to the existing configuration.\n\n---\n\n## Phase 1: Project Scaffolding (Sequential \u2014 depends on Phase 0 results)\n\n### Call 4: Bash \u2014 Initialize npm and install dependencies\n```\nTool: Bash\ncommand: \"cd /home/lazydok/src/cc-skills-template && npm init -y && npm install express jsonwebtoken bcryptjs && npm install -D typescript @types/express @types/jsonwebtoken @types/bcryptjs ts-node jest ts-jest @types/jest supertest @types/supertest\"\ntimeout: 120000\n```\n\n### Call 5: Write \u2014 Create tsconfig.json\n```\nTool: Write\nfile_path: \"/home/lazydok/src/cc-skills-template/tsconfig.json\"\ncontent: |\n  {\n    \"compilerOptions\": {\n      \"target\": \"ES2020\",\n      \"module\": \"commonjs\",\n      \"lib\": [\"ES2020\"],\n      \"outDir\": \"./dist\",\n      \"rootDir\": \"./src\",\n      \"strict\": true,\n      \"esModuleInterop\": true,\n      \"skipLibCheck\": true,\n      \"forceConsistentCasingInFileNames\": true,\n      \"resolveJsonModule\": true,\n      \"declaration\": true,\n      \"declarationMap\": true,\n      \"sourceMap\": true\n    },\n    \"include\": [\"src/**/*\"],\n    \"exclude\": [\"node_modules\", \"dist\", \"**/*.test.ts\"]\n  }\n```\n\n### Call 6: Write \u2014 Create jest.config.ts\n```\nTool: Write\nfile_path: \"/home/lazydok/src/cc-skills-template/jest.config.ts\"\ncontent: |\n  export default {\n    preset: 'ts-jest',\n    testEnvironment: 'node',\n    roots: ['<rootDir>/src'],\n    testMatch: ['**/*.test.ts'],\n    moduleFileExtensions: ['ts', 'js', 'json'],\n  };\n```\n\n**Note:** Calls 5 and 6 can run in parallel since they write to different files, but Call 4 must finish first (it installs the dependencies they reference).\n\n---\n\n## Phase 2: Create Source Files (Parallel \u2014 all independent writes)\n\nAll seven Write calls below can be executed in parallel since they create independent files.\n\n### Call 7: Write \u2014 src/types/auth.ts (Shared type definitions)\n```\nTool: Write\nfile_path: \"/home/lazydok/src/cc-skills-template/src/types/auth.ts\"\ncontent: |\n  export interface RegisterRequest {\n    email: string;\n    password: string;\n    name: string;\n  }\n\n  export interface LoginRequest {\n    email: string;\n    password: string;\n  }\n\n  export interface AuthTokens {\n    accessToken: string;\n    refreshToken: string;\n  }\n\n  export interface TokenPayload {\n    userId: string;\n    email: string;\n  }\n\n  export interface User {\n    id: string;\n    email: string;\n    name: string;\n    passwordHash: string;\n  }\n```\n\n### Call 8: Write \u2014 src/services/auth.service.ts\n```\nTool: Write\nfile_path: \"/home/lazydok/src/cc-skills-template/src/services/auth.service.ts\"\ncontent: |\n  import jwt from 'jsonwebtoken';\n  import bcrypt from 'bcryptjs';\n  import { RegisterRequest, LoginRequest, AuthTokens, TokenPayload, User } from '../types/auth';\n\n  const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';\n  const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-key';\n  const ACCESS_TOKEN_EXPIRY = '15m';\n  const REFRESH_TOKEN_EXPIRY = '7d';\n\n  // In-memory store (would be a database in production)\n  const users: Map<string, User> = new Map();\n\n  export class AuthService {\n    async register(request: RegisterRequest): Promise<AuthTokens> {\n      const existingUser = Array.from(users.values()).find(u => u.email === request.email);\n      if (existingUser) {\n        throw new Error('User already exists');\n      }\n\n      const passwordHash = await bcrypt.hash(request.password, 10);\n      const id = crypto.randomUUID();\n      const user: User = {\n        id,\n        email: request.email,\n        name: request.name,\n        passwordHash,\n      };\n\n      users.set(id, user);\n      return this.generateTokens({ userId: id, email: user.email });\n    }\n\n    async login(request: LoginRequest): Promise<AuthTokens> {\n      const user = Array.from(users.values()).find(u => u.email === request.email);\n      if (!user) {\n        throw new Error('Invalid credentials');\n      }\n\n      const isValid = await bcrypt.compare(request.password, user.passwordHash);\n      if (!isValid) {\n        throw new Error('Invalid credentials');\n      }\n\n      return this.generateTokens({ userId: user.id, email: user.email });\n    }\n\n    async refresh(refreshToken: string): Promise<AuthTokens> {\n      try {\n        const payload = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as TokenPayload;\n        const user = users.get(payload.userId);\n        if (!user) {\n          throw new Error('User not found');\n        }\n        return this.generateTokens({ userId: user.id, email: user.email });\n      } catch {\n        throw new Error('Invalid refresh token');\n      }\n    }\n\n    private generateTokens(payload: TokenPayload): AuthTokens {\n      const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });\n      const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY });\n      return { accessToken, refreshToken };\n    }\n\n    // Exposed for testing: clear in-memory store\n    _clearUsers(): void {\n      users.clear();\n    }\n  }\n```\n\n### Call 9: Write \u2014 src/api/auth.router.ts\n```\nTool: Write\nfile_path: \"/home/lazydok/src/cc-skills-template/src/api/auth.router.ts\"\ncontent: |\n  import { Router, Request, Response } from 'express';\n  import { AuthService } from '../services/auth.service';\n\n  const router = Router();\n  const authService = new AuthService();\n\n  router.post('/register', async (req: Request, res: Response) => {\n    try {\n      const { email, password, name } = req.body;\n      if (!email || !password || !name) {\n        return res.status(400).json({ error: 'Missing required fields: email, password, name' });\n      }\n      const tokens = await authService.register({ email, password, name });\n      return res.status(201).json(tokens);\n    } catch (error: any) {\n      if (error.message === 'User already exists') {\n        return res.status(409).json({ error: error.message });\n      }\n      return res.status(500).json({ error: 'Internal server error' });\n    }\n  });\n\n  router.post('/login', async (req: Request, res: Response) => {\n    try {\n      const { email, password } = req.body;\n      if (!email || !password) {\n        return res.status(400).json({ error: 'Missing required fields: email, password' });\n      }\n      const tokens = await authService.login({ email, password });\n      return res.status(200).json(tokens);\n    } catch (error: any) {\n      if (error.message === 'Invalid credentials') {\n        return res.status(401).json({ error: error.message });\n      }\n      return res.status(500).json({ error: 'Internal server error' });\n    }\n  });\n\n  router.post('/refresh', async (req: Request, res: Response) => {\n    try {\n      const { refreshToken } = req.body;\n      if (!refreshToken) {\n        return res.status(400).json({ error: 'Missing required field: refreshToken' });\n      }\n      const tokens = await authService.refresh(refreshToken);\n      return res.status(200).json(tokens);\n    } catch (error: any) {\n      if (error.message === 'Invalid refresh token') {\n        return res.status(401).json({ error: error.message });\n      }\n      return res.status(500).json({ error: 'Internal server error' });\n    }\n  });\n\n  export { router as authRouter, authService };\n```\n\n### Call 10: Write \u2014 src/app.ts (Express app setup)\n```\nTool: Write\nfile_path: \"/home/lazydok/src/cc-skills-template/src/app.ts\"\ncontent: |\n  import express from 'express';\n  import { authRouter } from './api/auth.router';\n\n  const app = express();\n  app.use(express.json());\n  app.use('/auth', authRouter);\n\n  export default app;\n```\n\n### Call 11: Write \u2014 src/server.ts (Entry point)\n```\nTool: Write\nfile_path: \"/home/lazydok/src/cc-skills-template/src/server.ts\"\ncontent: |\n  import app from './app';\n\n  const PORT = process.env.PORT || 3000;\n\n  app.listen(PORT, () => {\n    console.log(`Server running on port ${PORT}`);\n  });\n```\n\n### Call 12: Write \u2014 src/services/auth.service.test.ts (Service unit tests)\n```\nTool: Write\nfile_path: \"/home/lazydok/src/cc-skills-template/src/services/auth.service.test.ts\"\ncontent: |\n  import { AuthService } from './auth.service';\n  import jwt from 'jsonwebtoken';\n\n  describe('AuthService', () => {\n    let authService: AuthService;\n\n    beforeEach(() => {\n      authService = new AuthService();\n      authService._clearUsers();\n    });\n\n    describe('register', () => {\n      it('should register a new user and return tokens', async () => {\n        const tokens = await authService.register({\n          email: 'test@example.com',\n          password: 'password123',\n          name: 'Test User',\n        });\n\n        expect(tokens).toHaveProperty('accessToken');\n        expect(tokens).toHaveProperty('refreshToken');\n        expect(typeof tokens.accessToken).toBe('string');\n        expect(typeof tokens.refreshToken).toBe('string');\n      });\n\n      it('should throw if user already exists', async () => {\n        await authService.register({\n          email: 'test@example.com',\n          password: 'password123',\n          name: 'Test User',\n        });\n\n        await expect(\n          authService.register({\n            email: 'test@example.com',\n            password: 'password456',\n            name: 'Another User',\n          })\n        ).rejects.toThrow('User already exists');\n      });\n\n      it('should return a valid JWT access token', async () => {\n        const tokens = await authService.register({\n          email: 'jwt@example.com',\n          password: 'password123',\n          name: 'JWT User',\n        });\n\n        const decoded = jwt.verify(tokens.accessToken, 'dev-secret-key') as any;\n        expect(decoded).toHaveProperty('userId');\n        expect(decoded.email).toBe('jwt@example.com');\n      });\n    });\n\n    describe('login', () => {\n      beforeEach(async () => {\n        await authService.register({\n          email: 'login@example.com',\n          password: 'password123',\n          name: 'Login User',\n        });\n      });\n\n      it('should login with valid credentials', async () => {\n        const tokens = await authService.login({\n          email: 'login@example.com',\n          password: 'password123',\n        });\n\n        expect(tokens).toHaveProperty('accessToken');\n        expect(tokens).toHaveProperty('refreshToken');\n      });\n\n      it('should throw on wrong password', async () => {\n        await expect(\n          authService.login({\n            email: 'login@example.com',\n            password: 'wrongpassword',\n          })\n        ).rejects.toThrow('Invalid credentials');\n      });\n\n      it('should throw on non-existent user', async () => {\n        await expect(\n          authService.login({\n            email: 'nobody@example.com',\n            password: 'password123',\n          })\n        ).rejects.toThrow('Invalid credentials');\n      });\n    });\n\n    describe('refresh', () => {\n      it('should return new tokens for a valid refresh token', async () => {\n        const initialTokens = await authService.register({\n          email: 'refresh@example.com',\n          password: 'password123',\n          name: 'Refresh User',\n        });\n\n        const newTokens = await authService.refresh(initialTokens.refreshToken);\n        expect(newTokens).toHaveProperty('accessToken');\n        expect(newTokens).toHaveProperty('refreshToken');\n        expect(newTokens.accessToken).not.toBe(initialTokens.accessToken);\n      });\n\n      it('should throw on invalid refresh token', async () => {\n        await expect(\n          authService.refresh('invalid-token')\n        ).rejects.toThrow('Invalid refresh token');\n      });\n    });\n  });\n```\n\n### Call 13: Write \u2014 src/api/auth.router.test.ts (Router/integration unit tests)\n```\nTool: Write\nfile_path: \"/home/lazydok/src/cc-skills-template/src/api/auth.router.test.ts\"\ncontent: |\n  import request from 'supertest';\n  import app from '../app';\n  import { authService } from './auth.router';\n\n  describe('Auth API Endpoints', () => {\n    beforeEach(() => {\n      authService._clearUsers();\n    });\n\n    describe('POST /auth/register', () => {\n      it('should register and return 201 with tokens', async () => {\n        const res = await request(app)\n          .post('/auth/register')\n          .send({ email: 'new@example.com', password: 'pass123', name: 'New User' });\n\n        expect(res.status).toBe(201);\n        expect(res.body).toHaveProperty('accessToken');\n        expect(res.body).toHaveProperty('refreshToken');\n      });\n\n      it('should return 400 if fields are missing', async () => {\n        const res = await request(app)\n          .post('/auth/register')\n          .send({ email: 'new@example.com' });\n\n        expect(res.status).toBe(400);\n      });\n\n      it('should return 409 for duplicate email', async () => {\n        await request(app)\n          .post('/auth/register')\n          .send({ email: 'dup@example.com', password: 'pass123', name: 'Dup' });\n\n        const res = await request(app)\n          .post('/auth/register')\n          .send({ email: 'dup@example.com', password: 'pass456', name: 'Dup2' });\n\n        expect(res.status).toBe(409);\n      });\n    });\n\n    describe('POST /auth/login', () => {\n      beforeEach(async () => {\n        await request(app)\n          .post('/auth/register')\n          .send({ email: 'user@example.com', password: 'pass123', name: 'User' });\n      });\n\n      it('should login and return 200 with tokens', async () => {\n        const res = await request(app)\n          .post('/auth/login')\n          .send({ email: 'user@example.com', password: 'pass123' });\n\n        expect(res.status).toBe(200);\n        expect(res.body).toHaveProperty('accessToken');\n      });\n\n      it('should return 401 for wrong password', async () => {\n        const res = await request(app)\n          .post('/auth/login')\n          .send({ email: 'user@example.com', password: 'wrong' });\n\n        expect(res.status).toBe(401);\n      });\n\n      it('should return 400 if fields are missing', async () => {\n        const res = await request(app)\n          .post('/auth/login')\n          .send({ email: 'user@example.com' });\n\n        expect(res.status).toBe(400);\n      });\n    });\n\n    describe('POST /auth/refresh', () => {\n      it('should return new tokens for valid refresh token', async () => {\n        const registerRes = await request(app)\n          .post('/auth/register')\n          .send({ email: 'ref@example.com', password: 'pass123', name: 'Ref' });\n\n        const res = await request(app)\n          .post('/auth/refresh')\n          .send({ refreshToken: registerRes.body.refreshToken });\n\n        expect(res.status).toBe(200);\n        expect(res.body).toHaveProperty('accessToken');\n        expect(res.body).toHaveProperty('refreshToken');\n      });\n\n      it('should return 401 for invalid refresh token', async () => {\n        const res = await request(app)\n          .post('/auth/refresh')\n          .send({ refreshToken: 'garbage' });\n\n        expect(res.status).toBe(401);\n      });\n\n      it('should return 400 if refreshToken is missing', async () => {\n        const res = await request(app)\n          .post('/auth/refresh')\n          .send({});\n\n        expect(res.status).toBe(400);\n      });\n    });\n  });\n```\n\n---\n\n## Phase 3: Validation (Sequential \u2014 depends on Phase 2)\n\n### Call 14: Bash \u2014 Compile TypeScript\n```\nTool: Bash\ncommand: \"cd /home/lazydok/src/cc-skills-template && npx tsc --noEmit\"\ntimeout: 30000\n```\n\n### Call 15: Bash \u2014 Run unit tests\n```\nTool: Bash\ncommand: \"cd /home/lazydok/src/cc-skills-template && npx jest --verbose\"\ntimeout: 60000\n```\n\n**Decision point:** If compilation or tests fail, read the error output, identify the failing file(s) using `Read`, then fix with `Edit`. Re-run the failing phase.\n\n---\n\n## Phase 4: Fix Loop (Conditional \u2014 only if Phase 3 fails)\n\n### Call 16 (if needed): Read \u2014 Read the failing file\n```\nTool: Read\nfile_path: \"<path from error output>\"\n```\n\n### Call 17 (if needed): Edit \u2014 Apply fix\n```\nTool: Edit\nfile_path: \"<path from error output>\"\nold_string: \"<broken code>\"\nnew_string: \"<fixed code>\"\n```\n\nThen re-run Phase 3 calls (14-15).\n\n---\n\n## Summary of File Structure Created\n\n```\nsrc/\n  types/\n    auth.ts              \u2014 Shared interfaces (User, tokens, requests)\n  services/\n    auth.service.ts      \u2014 Business logic: register, login, refresh\n    auth.service.test.ts \u2014 Unit tests for AuthService\n  api/\n    auth.router.ts       \u2014 Express routes for /auth/*\n    auth.router.test.ts  \u2014 Integration tests using supertest\n  app.ts                 \u2014 Express app setup\n  server.ts              \u2014 Server entry point\ntsconfig.json\njest.config.ts\n```\n\n## Parallelism Strategy\n\n| Phase | Calls | Execution |\n|-------|-------|-----------|\n| 0: Recon | 1, 2, 3 | **Parallel** |\n| 1: Scaffold | 4 then (5, 6) | **Sequential then Parallel** |\n| 2: Source files | 7-13 | **All Parallel** (7 independent file writes) |\n| 3: Validate | 14 then 15 | **Sequential** (compile before test) |\n| 4: Fix loop | 16, 17 | **Sequential, conditional** |\n\n**Total tool calls (happy path):** 15\n**Total tool calls (with one fix iteration):** 19\n"}], "grading": {"expectations": [{"text": "TeamCreate\uac00 \uba3c\uc800 \ud638\ucd9c\ub418\uc5b4 \ud300\uc774 \uc0dd\uc131\ub428", "passed": false, "evidence": "TeamCreate \ud638\ucd9c \uc5c6\uc74c. \uc804\uccb4 \uacc4\ud68d\uc774 \uc9c1\uc811 Tool \ud638\ucd9c(Write, Bash, Glob)\ub85c \uad6c\uc131\ub428"}, {"text": "\ubaa8\ub4e0 Agent \ud638\ucd9c\uc5d0 team_name \ud30c\ub77c\ubbf8\ud130\uac00 \ud3ec\ud568\ub428", "passed": false, "evidence": "Agent \ub3c4\uad6c \uc790\uccb4\uac00 \uc0ac\uc6a9\ub418\uc9c0 \uc54a\uc74c. \ubaa8\ub4e0 \uc791\uc5c5\uc744 \ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8\uac00 \uc9c1\uc811 \uc218\ud589"}, {"text": "\ubaa8\ub4e0 Agent \ud638\ucd9c\uc5d0 name \ud30c\ub77c\ubbf8\ud130\uac00 \ud3ec\ud568\ub428", "passed": false, "evidence": "Agent \ub3c4\uad6c \ubbf8\uc0ac\uc6a9"}, {"text": "\ucd5c\uc18c 3\uba85\uc758 teammate\uac00 \uc2a4\ud3f0\ub428 (API, service, test \ubd84\ub9ac)", "passed": false, "evidence": "teammate \uc5c6\uc74c. \ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8\uac00 7\uac1c \ud30c\uc77c\uc744 \uc21c\ucc28/\ubcd1\ub82c Write\ub85c \uc9c1\uc811 \uc791\uc131"}, {"text": "\uac01 teammate\uc758 prompt\uc5d0 \uad6c\uccb4\uc801\uc778 \ud30c\uc77c \uacbd\ub85c\uc640 \uc791\uc5c5 \ub0b4\uc6a9\uc774 \ud3ec\ud568\ub428", "passed": false, "evidence": "teammate\uac00 \uc5c6\uc73c\ubbc0\ub85c N/A"}, {"text": "\ud14c\uc2a4\ud2b8 \uc804\ub2f4 teammate\uac00 \uc874\uc7ac\ud568", "passed": false, "evidence": "\ubcc4\ub3c4 teammate \uc5c6\uc74c. \ud14c\uc2a4\ud2b8 \ud30c\uc77c\uc740 Phase 2\uc5d0\uc11c \ub2e4\ub978 \uc18c\uc2a4 \ud30c\uc77c\uacfc \ud568\uaed8 \ubcd1\ub82c Write"}, {"text": "teammate \uac04 \ud30c\uc77c \uc18c\uc720\uad8c\uc774 \uacb9\uce58\uc9c0 \uc54a\uc74c", "passed": false, "evidence": "\ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8\uac00 \ubaa8\ub4e0 \ud30c\uc77c \uc18c\uc720. \ud30c\uc77c \uc18c\uc720\uad8c \ubd84\ub9ac \uac1c\ub150 \uc790\uccb4\uac00 \uc801\uc6a9\ub418\uc9c0 \uc54a\uc74c"}], "summary": {"passed": 0, "failed": 7, "total": 7, "pass_rate": 0.0}}}, {"id": "eval-2-debugging-investigation-with_skill", "prompt": "\uc6b0\ub9ac \uc571\uc5d0\uc11c \uc8fc\ubb38 \ucc98\ub9ac \ub85c\uc9c1\uc5d0 \ubc84\uadf8\uac00 \uc788\uc5b4. \uc0ac\uc6a9\uc790\uac00 \uc8fc\ubb38\ud558\uba74 \uac00\ub054 \uae08\uc561\uc774 \uc798\ubabb \uacc4\uc0b0\ub3fc. src/services/order_processor.py, src/models/order.py, src/api/handlers/orders.py \uc774 \uc138 \ud30c\uc77c\uc744 \uc870\uc0ac\ud574\uc11c \uc6d0\uc778\uc744 \ucc3e\uc544\uc918.", "eval_id": 2, "outputs": [{"name": "execution_plan.md", "type": "text", "content": "# Execution Plan: Order Processing Bug Investigation\n\n## Task Summary\n\nInvestigate a bug where order amounts are sometimes calculated incorrectly. Three files to examine:\n- `src/services/order_processor.py` (business logic)\n- `src/models/order.py` (data model)\n- `src/api/handlers/orders.py` (API handler)\n\n## Team Design\n\n**Team name**: `order-bug-investigation`\n**Team size**: 5 teammates (Investigation/debug scope per sizing guide: 4-6)\n**All agents use `Explore` subagent_type** since this is a read-only investigation (no file edits needed).\n\n### Teammate Roles\n\n| Name | Responsibility | File Ownership |\n|------|---------------|----------------|\n| `order-processor-analyst` | Analyze business logic in order_processor.py | `src/services/order_processor.py` |\n| `order-model-analyst` | Analyze data model in order.py | `src/models/order.py` |\n| `api-handler-analyst` | Analyze API handler in orders.py | `src/api/handlers/orders.py` |\n| `integration-tracer` | Trace data flow across all three files, looking for mismatches | All three files (read-only cross-reference) |\n| `test-reviewer` | Check existing tests for coverage gaps related to amount calculation | `tests/` directory |\n\n---\n\n## Exact Tool Call Sequence\n\n### Step 1: Create Team\n\n```\nTeamCreate(\n  team_name=\"order-bug-investigation\",\n  description=\"Investigate intermittent order amount miscalculation bug across order_processor.py, order.py, and orders.py\"\n)\n```\n\n### Step 2: Create Tasks\n\n```\nTaskCreate(\n  subject=\"Analyze order_processor.py business logic\",\n  description=\"Read src/services/order_processor.py. Focus on: amount calculation logic, discount/tax application order, rounding behavior, floating point arithmetic, currency handling, edge cases (empty cart, zero quantity, negative prices). Report all suspicious code paths.\"\n)\n```\n-> Returns taskId=\"1\"\n\n```\nTaskCreate(\n  subject=\"Analyze order.py data model\",\n  description=\"Read src/models/order.py. Focus on: field types for monetary values (float vs Decimal), default values, validation rules, property calculations, serialization/deserialization of amounts, any computed fields. Report type safety issues and missing validations.\"\n)\n```\n-> Returns taskId=\"2\"\n\n```\nTaskCreate(\n  subject=\"Analyze orders.py API handler\",\n  description=\"Read src/api/handlers/orders.py. Focus on: request parsing, type coercion of amount fields, how order data flows from request to model to processor, response serialization, any transformations that could lose precision. Report suspicious conversions or missing validations.\"\n)\n```\n-> Returns taskId=\"3\"\n\n```\nTaskCreate(\n  subject=\"Trace data flow across all three modules\",\n  description=\"After initial analyses complete, read all three files and trace the full order lifecycle: API request -> handler parsing -> model instantiation -> processor calculation -> response. Identify any points where amount data is transformed, truncated, or retyped. Cross-reference findings from other analysts.\"\n)\n```\n-> Returns taskId=\"4\"\n\n```\nTaskCreate(\n  subject=\"Review test coverage for amount calculation\",\n  description=\"Search tests/ directory for order-related tests. Check coverage of: discount combinations, tax calculation, rounding edge cases, large/small amounts, concurrent orders, currency precision. Identify gaps that could hide the intermittent bug.\"\n)\n```\n-> Returns taskId=\"5\"\n\n```\nTaskCreate(\n  subject=\"Synthesize findings and identify root cause\",\n  description=\"Combine all teammate findings into a unified root cause analysis with recommended fix.\"\n)\n```\n-> Returns taskId=\"6\"\n\n### Step 3: Set Task Dependencies\n\n```\nTaskUpdate(taskId=\"4\", addBlockedBy=[\"1\", \"2\", \"3\"])\n```\nTask 4 (integration tracing) waits for the three individual file analyses to complete.\n\n```\nTaskUpdate(taskId=\"6\", addBlockedBy=[\"1\", \"2\", \"3\", \"4\", \"5\"])\n```\nTask 6 (synthesis) waits for all investigation tasks.\n\n### Step 4: Spawn Teammates (parallel)\n\nAll five Agent calls are issued in parallel:\n\n```\nAgent(\n  team_name=\"order-bug-investigation\",\n  name=\"order-processor-analyst\",\n  subagent_type=\"Explore\",\n  prompt=\"You are investigating an intermittent bug where order amounts are sometimes calculated incorrectly. Your job is to thoroughly analyze src/services/order_processor.py. Look for:\\n\\n1. How total amounts are calculated (subtotal, discounts, taxes, fees)\\n2. Order of operations in calculations (e.g., discount applied before or after tax?)\\n3. Floating point arithmetic issues (using float instead of Decimal for money)\\n4. Rounding errors or truncation\\n5. Race conditions if any shared state is used\\n6. Edge cases: empty items list, zero quantity, negative prices, very large amounts\\n7. Any conditional logic that only triggers sometimes (the bug is intermittent)\\n8. Currency handling and precision\\n\\nRead the file carefully, then report your findings as a structured markdown summary. Send your findings to 'integration-tracer' via SendMessage when done. Mark your task as completed.\",\n  description=\"Analyze order processing business logic for calculation bugs\"\n)\n```\n\n```\nAgent(\n  team_name=\"order-bug-investigation\",\n  name=\"order-model-analyst\",\n  subagent_type=\"Explore\",\n  prompt=\"You are investigating an intermittent bug where order amounts are sometimes calculated incorrectly. Your job is to thoroughly analyze src/models/order.py. Look for:\\n\\n1. Data types used for monetary fields (float vs Decimal vs int cents)\\n2. Default values that could cause unexpected calculations\\n3. Validation rules (or lack thereof) on price/quantity/amount fields\\n4. Any computed properties or __post_init__ that modify amounts\\n5. Serialization/deserialization methods that might lose precision\\n6. Type coercion that happens implicitly\\n7. Whether the model enforces non-negative amounts\\n8. Any inheritance or mixin that affects field behavior\\n\\nRead the file carefully, then report your findings as a structured markdown summary. Send your findings to 'integration-tracer' via SendMessage when done. Mark your task as completed.\",\n  description=\"Analyze order data model for type and validation issues\"\n)\n```\n\n```\nAgent(\n  team_name=\"order-bug-investigation\",\n  name=\"api-handler-analyst\",\n  subagent_type=\"Explore\",\n  prompt=\"You are investigating an intermittent bug where order amounts are sometimes calculated incorrectly. Your job is to thoroughly analyze src/api/handlers/orders.py. Look for:\\n\\n1. How request body is parsed \u2014 are amount fields parsed as float or string?\\n2. Type coercion when creating order model from request data\\n3. Any rounding or formatting applied to amounts in the handler\\n4. Whether the handler passes raw user input or transforms it before calling the processor\\n5. Response serialization \u2014 does it round or truncate the calculated amount?\\n6. Error handling that might silently swallow calculation errors\\n7. Any middleware or decorators that modify request/response data\\n8. Differences between create-order and update-order paths\\n\\nRead the file carefully, then report your findings as a structured markdown summary. Send your findings to 'integration-tracer' via SendMessage when done. Mark your task as completed.\",\n  description=\"Analyze API handler for data transformation issues\"\n)\n```\n\n```\nAgent(\n  team_name=\"order-bug-investigation\",\n  name=\"integration-tracer\",\n  subagent_type=\"Explore\",\n  prompt=\"You are the integration tracer on a debugging team investigating intermittent order amount miscalculation. Wait for findings from 'order-processor-analyst', 'order-model-analyst', and 'api-handler-analyst' via SendMessage.\\n\\nOnce you receive their findings, read all three files yourself:\\n- src/services/order_processor.py\\n- src/models/order.py\\n- src/api/handlers/orders.py\\n\\nThen trace the complete data flow:\\n1. API request arrives at orders.py handler\\n2. Handler parses request and creates Order model\\n3. Order model instantiates with field types/defaults from order.py\\n4. order_processor.py receives the model and calculates amounts\\n5. Result flows back through handler to API response\\n\\nFocus on boundaries between modules:\\n- Type mismatches at interfaces (float vs Decimal vs string)\\n- Data lost in transit between layers\\n- Assumptions one module makes about another's behavior\\n- Intermittent conditions (timing, input-dependent paths)\\n\\nProduce a data flow diagram (text-based) and highlight the exact point(s) where the bug likely occurs. Send your analysis to the lead.\",\n  description=\"Trace order data flow across all three modules to find boundary bugs\"\n)\n```\n\n```\nAgent(\n  team_name=\"order-bug-investigation\",\n  name=\"test-reviewer\",\n  subagent_type=\"Explore\",\n  prompt=\"You are reviewing test coverage for an intermittent order amount calculation bug. Search the tests/ directory (and any test files near the source files) for tests related to orders, order processing, and amount calculation.\\n\\nSpecifically check for:\\n1. Tests that verify total amount calculation with discounts + tax\\n2. Tests for floating point edge cases (e.g., 0.1 + 0.2)\\n3. Tests with multiple items at different prices\\n4. Tests for discount stacking or percentage vs fixed discounts\\n5. Tests for tax calculation rounding\\n6. Tests for boundary values (very small amounts, very large amounts)\\n7. Tests for concurrent order creation\\n8. Integration tests that go from API request to final amount\\n\\nReport which scenarios are tested and, critically, which are NOT tested. The untested scenarios are likely where the intermittent bug hides. Send your findings to the lead.\",\n  description=\"Review test coverage gaps for order amount calculation\"\n)\n```\n\n### Step 5: Assign Tasks to Teammates\n\n```\nTaskUpdate(taskId=\"1\", owner=\"order-processor-analyst\")\nTaskUpdate(taskId=\"2\", owner=\"order-model-analyst\")\nTaskUpdate(taskId=\"3\", owner=\"api-handler-analyst\")\nTaskUpdate(taskId=\"4\", owner=\"integration-tracer\")\nTaskUpdate(taskId=\"5\", owner=\"test-reviewer\")\n```\n\nTask 6 (synthesis) is owned by the lead (no owner assignment needed).\n\n### Step 6: Monitor Progress\n\n```\nTaskList()\n```\n\nPeriodically check task status. When tasks 1, 2, 3 complete, task 4 auto-unblocks.\n\n```\nTaskGet(taskId=\"4\")\n```\n\nCheck integration-tracer progress after individual analyses complete.\n\n### Step 7: SendMessage Patterns During Execution\n\n**Teammates -> integration-tracer** (each analyst sends findings when done):\n```\nSendMessage(\n  type=\"message\",\n  recipient=\"integration-tracer\",\n  content=\"[Findings from order-processor-analyst analysis...]\",\n  summary=\"Completed analysis of order_processor.py - found potential floating point issue in discount calculation\"\n)\n```\n\n**integration-tracer -> lead** (after cross-referencing):\n```\nSendMessage(\n  type=\"message\",\n  recipient=\"lead\",\n  content=\"[Cross-module analysis with data flow diagram and identified bug location...]\",\n  summary=\"Root cause identified at boundary between handler and processor - float conversion loses precision\"\n)\n```\n\n**test-reviewer -> lead** (after coverage analysis):\n```\nSendMessage(\n  type=\"message\",\n  recipient=\"lead\",\n  content=\"[Test coverage gaps report...]\",\n  summary=\"No tests cover multi-item orders with percentage discounts - likely untested bug path\"\n)\n```\n\n**Lead broadcast (only if critical finding):**\n```\nSendMessage(\n  type=\"broadcast\",\n  content=\"Critical: order-processor-analyst found that discount is applied using float multiplication. All analysts check if your module interacts with this path.\",\n  summary=\"Float multiplication in discount path - cross-check needed\"\n)\n```\n\n### Step 8: Synthesis (Lead performs Task 6)\n\nAfter all tasks complete, the lead reads all teammate findings and produces a unified report:\n- Root cause identification\n- Affected code paths with line references\n- Recommended fix\n- Suggested test cases to add\n\n### Step 9: Shutdown Sequence\n\n```\nSendMessage(type=\"shutdown_request\", recipient=\"order-processor-analyst\", content=\"Investigation complete. Thank you for your analysis.\")\nSendMessage(type=\"shutdown_request\", recipient=\"order-model-analyst\", content=\"Investigation complete. Thank you for your analysis.\")\nSendMessage(type=\"shutdown_request\", recipient=\"api-handler-analyst\", content=\"Investigation complete. Thank you for your analysis.\")\nSendMessage(type=\"shutdown_request\", recipient=\"integration-tracer\", content=\"Investigation complete. Thank you for your analysis.\")\nSendMessage(type=\"shutdown_request\", recipient=\"test-reviewer\", content=\"Investigation complete. Thank you for your analysis.\")\n```\n\n### Step 10: Cleanup\n\n```\nTeamDelete()\n```\n\n---\n\n## Summary of Tool Calls\n\n| # | Tool | Key Parameters |\n|---|------|---------------|\n| 1 | `TeamCreate` | team_name=\"order-bug-investigation\" |\n| 2-7 | `TaskCreate` x6 | One per investigation task + synthesis |\n| 8-9 | `TaskUpdate` x2 | Set dependencies (task 4 blocked by 1,2,3; task 6 blocked by all) |\n| 10-14 | `Agent` x5 | All with team_name, name, subagent_type=\"Explore\", detailed prompts |\n| 15-19 | `TaskUpdate` x5 | Assign owners to tasks |\n| 20+ | `TaskList`/`TaskGet` | Monitor progress |\n| -- | `SendMessage` (by teammates) | Direct messages between analysts and integration-tracer |\n| -- | `SendMessage` x5 | shutdown_request to each teammate |\n| Final | `TeamDelete` | Clean up team resources |\n\n**Total tool calls**: ~30 (6 TaskCreate + 2 dependency TaskUpdate + 5 Agent + 5 owner TaskUpdate + 1 TeamCreate + 5 shutdown SendMessage + 1 TeamDelete + monitoring calls)\n"}], "grading": {"expectations": [{"text": "TeamCreate\uac00 \ud638\ucd9c\ub428", "passed": true, "evidence": "Step 1\uc5d0\uc11c TeamCreate(team_name=\"order-bug-investigation\", ...) \ud638\ucd9c"}, {"text": "\ubaa8\ub4e0 Agent \ud638\ucd9c\uc5d0 team_name\uacfc name\uc774 \ud3ec\ud568\ub428", "passed": true, "evidence": "5\uac1c Agent \ubaa8\ub450 team_name=\"order-bug-investigation\" \ubc0f \uace0\uc720 name \ud3ec\ud568"}, {"text": "Explore subagent_type\uc744 \uc0ac\uc6a9\ud558\ub294 teammate\uac00 \ucd5c\uc18c 1\uba85 \uc874\uc7ac", "passed": true, "evidence": "5\uba85 \ubaa8\ub450 subagent_type=\"Explore\" \uc0ac\uc6a9 \u2014 \uc77d\uae30 \uc804\uc6a9 \uc870\uc0ac\uc5d0 \uc801\ud569"}, {"text": "\uc870\uc0ac \ub300\uc0c1 \ud30c\uc77c(order_processor.py, order.py, orders.py)\uc774 teammate prompt\uc5d0 \uba85\uc2dc\ub428", "passed": true, "evidence": "order-processor-analyst: order_processor.py, order-model-analyst: order.py, api-handler-analyst: orders.py \uac01\uac01 \uba85\uc2dc"}, {"text": "teammate \uac04 SendMessage\ub97c \ud1b5\ud55c findings \uacf5\uc720\uac00 \uc124\uacc4\uc5d0 \ud3ec\ud568\ub428", "passed": true, "evidence": "Step 7\uc5d0 \uad6c\uccb4\uc801 SendMessage \ud328\ud134 \ubb38\uc11c\ud654: analysts\u2192integration-tracer\u2192lead \ud750\ub984"}, {"text": "\ucd5c\uc885 \uacb0\uacfc\ub97c \uc885\ud569\ud558\ub294 \uacfc\uc815\uc774 \ud3ec\ud568\ub428", "passed": true, "evidence": "Task 6 'Synthesize findings and identify root cause' + integration-tracer \uc5ed\ud560\uc774 cross-reference \uc218\ud589"}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}}}, {"id": "eval-2-debugging-investigation-without_skill", "prompt": "\uc6b0\ub9ac \uc571\uc5d0\uc11c \uc8fc\ubb38 \ucc98\ub9ac \ub85c\uc9c1\uc5d0 \ubc84\uadf8\uac00 \uc788\uc5b4. \uc0ac\uc6a9\uc790\uac00 \uc8fc\ubb38\ud558\uba74 \uac00\ub054 \uae08\uc561\uc774 \uc798\ubabb \uacc4\uc0b0\ub3fc. src/services/order_processor.py, src/models/order.py, src/api/handlers/orders.py \uc774 \uc138 \ud30c\uc77c\uc744 \uc870\uc0ac\ud574\uc11c \uc6d0\uc778\uc744 \ucc3e\uc544\uc918.", "eval_id": 2, "outputs": [{"name": "execution_plan.md", "type": "text", "content": "# Execution Plan: Debugging Order Amount Calculation Bug\n\n## Task Summary\n\nInvestigate a bug in order processing logic where the calculated amount is sometimes incorrect. Three files to examine:\n- `src/services/order_processor.py`\n- `src/models/order.py`\n- `src/api/handlers/orders.py`\n\n---\n\n## Phase 1: Read All Three Files in Parallel\n\nSince all three files are independent reads, execute them simultaneously to minimize latency.\n\n### Tool Calls (parallel):\n\n```\nRead(file_path=\"src/services/order_processor.py\")\nRead(file_path=\"src/models/order.py\")\nRead(file_path=\"src/api/handlers/orders.py\")\n```\n\n**Rationale:** Reading all three files in parallel gives us the full picture immediately. No dependencies between these reads.\n\n---\n\n## Phase 2: Targeted Search for Calculation Logic\n\nAfter reading the files, search for specific patterns related to amount calculation. These searches run in parallel.\n\n### Tool Calls (parallel):\n\n```\nGrep(pattern=\"total|amount|price|subtotal|discount|tax|sum|calculate\",\n     path=\"src/services/order_processor.py\",\n     output_mode=\"content\", -n=true)\n\nGrep(pattern=\"total|amount|price|subtotal|discount|tax|sum|calculate\",\n     path=\"src/models/order.py\",\n     output_mode=\"content\", -n=true)\n\nGrep(pattern=\"total|amount|price|subtotal|discount|tax|sum|calculate\",\n     path=\"src/api/handlers/orders.py\",\n     output_mode=\"content\", -n=true)\n```\n\n**Rationale:** Isolate all lines dealing with monetary calculations across all three files. This narrows the investigation scope.\n\n---\n\n## Phase 3: Search for Common Bug Patterns\n\nSearch for patterns that commonly cause calculation bugs. These run in parallel.\n\n### Tool Calls (parallel):\n\n```\n# Float arithmetic issues (classic source of money bugs)\nGrep(pattern=\"float|round|decimal|Decimal\",\n     path=\"src/\",\n     output_mode=\"content\", -n=true,\n     glob=\"*.py\")\n\n# Integer division issues\nGrep(pattern=\"/[^/]|//|int\\(|floor|ceil\",\n     path=\"src/\",\n     output_mode=\"content\", -n=true,\n     glob=\"*.py\")\n\n# Type conversion or casting that could lose precision\nGrep(pattern=\"int\\(|float\\(|str\\(\",\n     path=\"src/\",\n     output_mode=\"content\", -n=true,\n     glob=\"*.py\")\n```\n\n**Rationale:** The most common causes of incorrect money calculations are:\n1. Floating-point precision errors (using `float` instead of `Decimal`)\n2. Integer division truncation\n3. Incorrect type conversions\n4. Rounding errors\n\n---\n\n## Phase 4: Search for Data Flow and State Issues\n\nLook for how order data flows between the three files.\n\n### Tool Calls (parallel):\n\n```\n# How does the API handler pass data to the service?\nGrep(pattern=\"order_processor|OrderProcessor|process_order\",\n     path=\"src/api/handlers/orders.py\",\n     output_mode=\"content\", -n=true)\n\n# How does the service use the model?\nGrep(pattern=\"from.*models|import.*order|Order\\(\",\n     path=\"src/services/order_processor.py\",\n     output_mode=\"content\", -n=true)\n\n# What fields does the Order model expose?\nGrep(pattern=\"class Order|def __init__|@property|def calculate|def total\",\n     path=\"src/models/order.py\",\n     output_mode=\"content\", -n=true)\n```\n\n**Rationale:** Bugs often occur at boundaries between modules -- wrong fields passed, missing data, or mismatched assumptions.\n\n---\n\n## Phase 5: Check for Race Conditions or Mutability Issues\n\n### Tool Calls (parallel):\n\n```\n# Mutable default arguments or shared state\nGrep(pattern=\"def.*=\\[\\]|def.*=\\{\\}|cls\\.|class.*var\",\n     path=\"src/\",\n     output_mode=\"content\", -n=true,\n     glob=\"*.py\")\n\n# Async issues that could cause intermittent bugs\nGrep(pattern=\"async|await|thread|lock|concurrent\",\n     path=\"src/\",\n     output_mode=\"content\", -n=true,\n     glob=\"*.py\")\n```\n\n**Rationale:** The user said the bug happens \"sometimes\" (intermittent), which suggests either:\n- A race condition / concurrency issue\n- An edge case triggered by specific data (e.g., discounts, tax, empty items)\n- Mutable default arguments causing shared state\n\n---\n\n## Phase 6: Look for Edge Case Handling\n\n### Tool Calls (parallel):\n\n```\n# Check for missing None/null checks\nGrep(pattern=\"if.*None|is None|is not None|or 0|or \\[\\]\",\n     path=\"src/services/order_processor.py\",\n     output_mode=\"content\", -n=true)\n\n# Check for discount/coupon logic\nGrep(pattern=\"discount|coupon|promo|voucher\",\n     path=\"src/\",\n     output_mode=\"content\", -n=true,\n     glob=\"*.py\")\n\n# Check for quantity handling\nGrep(pattern=\"quantity|qty|count|items\",\n     path=\"src/services/order_processor.py\",\n     output_mode=\"content\", -n=true)\n```\n\n**Rationale:** Edge cases like zero-quantity items, null prices, or stacked discounts are common sources of calculation errors.\n\n---\n\n## Phase 7: Check Related Test Files\n\n### Tool Calls (sequential after parallel):\n\n```\n# Find related test files\nGlob(pattern=\"**/test*order*\")\nGlob(pattern=\"**/test*processor*\")\n```\n\nThen, if test files are found:\n\n```\nRead(file_path=\"<discovered_test_file_path>\")\n```\n\n**Rationale:** Tests reveal expected behavior, edge cases the developers considered, and potentially which cases are NOT covered.\n\n---\n\n## Phase 8: Check Git History for Recent Changes\n\n### Tool Call:\n\n```\nBash(command=\"git log --oneline -20 -- src/services/order_processor.py src/models/order.py src/api/handlers/orders.py\",\n     description=\"Show recent commits touching the three target files\")\n```\n\nThen for suspicious commits:\n\n```\nBash(command=\"git diff <commit_hash>~1 <commit_hash> -- src/services/order_processor.py src/models/order.py src/api/handlers/orders.py\",\n     description=\"Show diff for suspicious commit\")\n```\n\n**Rationale:** Regressions are introduced by recent changes. Reviewing the git history can pinpoint when the bug was introduced.\n\n---\n\n## Investigation Strategy Summary\n\n| Phase | Parallelism | Purpose |\n|-------|------------|---------|\n| 1 | 3 parallel reads | Get full file contents |\n| 2 | 3 parallel greps | Find calculation logic |\n| 3 | 3 parallel greps | Find common bug patterns |\n| 4 | 3 parallel greps | Trace data flow |\n| 5 | 2 parallel greps | Check concurrency/state |\n| 6 | 3 parallel greps | Check edge cases |\n| 7 | 2 parallel globs + reads | Review tests |\n| 8 | Sequential bash | Git history analysis |\n\n**Total estimated tool calls:** 22-25 calls across 8 phases.\n\n**Key principle:** Maximize parallel execution. All file reads happen together. All independent searches within a phase happen together. Sequential execution only where one step's output determines the next step's parameters.\n\n---\n\n## Common Root Causes to Watch For\n\n1. **Floating-point arithmetic** -- Using `float` for money instead of `Decimal` or integer cents\n2. **Missing rounding** -- Not rounding to 2 decimal places after multiplication\n3. **Order of operations** -- Applying discount after tax vs. before tax inconsistently\n4. **Race condition** -- Concurrent order modifications during calculation\n5. **Mutable default arguments** -- Shared list/dict between order instances\n6. **Type coercion** -- API handler sending string prices that get silently converted\n7. **Missing items** -- Iteration skipping first/last item, or off-by-one in quantity\n8. **Null/None fields** -- Unhandled None price or quantity defaulting to unexpected value\n"}], "grading": {"expectations": [{"text": "TeamCreate\uac00 \ud638\ucd9c\ub428", "passed": false, "evidence": "TeamCreate \ubbf8\uc0ac\uc6a9. 8\uac1c Phase\uc758 \uc9c1\uc811 \ub3c4\uad6c \ud638\ucd9c(Read, Grep, Glob, Bash)\ub85c \uad6c\uc131"}, {"text": "\ubaa8\ub4e0 Agent \ud638\ucd9c\uc5d0 team_name\uacfc name\uc774 \ud3ec\ud568\ub428", "passed": false, "evidence": "Agent \ub3c4\uad6c \uc790\uccb4\uac00 \ubbf8\uc0ac\uc6a9. Transcript\uc5d0\uc11c\ub3c4 'direct tool calls are preferred over Agent tool for this well-scoped task' \uba85\uc2dc"}, {"text": "Explore subagent_type\uc744 \uc0ac\uc6a9\ud558\ub294 teammate\uac00 \ucd5c\uc18c 1\uba85 \uc874\uc7ac", "passed": false, "evidence": "Explore \uc5d0\uc774\uc804\ud2b8 \ubbf8\uc0ac\uc6a9. \ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8\uac00 Read/Grep\uc73c\ub85c \uc9c1\uc811 \uc870\uc0ac"}, {"text": "\uc870\uc0ac \ub300\uc0c1 \ud30c\uc77c(order_processor.py, order.py, orders.py)\uc774 teammate prompt\uc5d0 \uba85\uc2dc\ub428", "passed": false, "evidence": "teammate\uac00 \uc5c6\uc73c\ubbc0\ub85c prompt\ub3c4 \uc5c6\uc74c. \ub2e4\ub9cc \ud30c\uc77c\ub4e4\uc740 Phase 1 Read \ub300\uc0c1\uc5d0 \ud3ec\ud568"}, {"text": "teammate \uac04 SendMessage\ub97c \ud1b5\ud55c findings \uacf5\uc720\uac00 \uc124\uacc4\uc5d0 \ud3ec\ud568\ub428", "passed": false, "evidence": "SendMessage \ubbf8\uc0ac\uc6a9. \ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8 \ub0b4\uc5d0\uc11c \uc21c\ucc28\uc801\uc73c\ub85c \uc815\ubcf4 \ucd95\uc801"}, {"text": "\ucd5c\uc885 \uacb0\uacfc\ub97c \uc885\ud569\ud558\ub294 \uacfc\uc815\uc774 \ud3ec\ud568\ub428", "passed": true, "evidence": "\ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8\uac00 8\uac1c Phase\ub97c \uac70\uccd0 \ucd5c\uc885 \ubd84\uc11d\uc744 \uc218\ud589\ud558\ub294 \uad6c\uc870 \u2014 \ubcc4\ub3c4 \uc885\ud569 \ub2e8\uacc4\ub294 \uc5c6\uc9c0\ub9cc \ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8 \ub0b4\uc5d0\uc11c \uc790\uc5f0\uc2a4\ub7fd\uac8c \uc885\ud569\ub428"}], "summary": {"passed": 1, "failed": 5, "total": 6, "pass_rate": 0.17}}}, {"id": "eval-3-code-review-xv-with_skill", "prompt": "\uc774 PR\uc758 \ucf54\ub4dc\ub97c \ub9ac\ubdf0\ud574\uc918. \ubcf4\uc548, \uc131\ub2a5, \uc815\ud655\uc131 \uad00\uc810\uc5d0\uc11c \uc885\ud569\uc801\uc73c\ub85c \uac80\ud1a0\ud558\uace0, Codex\ub85c\ub3c4 \ud06c\ub85c\uc2a4 \uac80\uc99d\ud574\uc918. \ubcc0\uacbd \ud30c\uc77c: src/auth/middleware.py, src/api/routes.py, tests/test_auth.py", "eval_id": 3, "outputs": [{"name": "execution_plan.md", "type": "text", "content": "# Execution Plan: PR Code Review with Codex Cross-Verification\n\n## Task\n\nReview PR code changes across `src/auth/middleware.py`, `src/api/routes.py`, `tests/test_auth.py` from security, performance, and correctness perspectives, with Codex cross-verification.\n\n## Team Design\n\n- **Team name**: `pr-review`\n- **Team size**: 5 teammates\n- **Pattern**: Code Analysis / Security Audit (Claude + Codex) per cross-verification MUST rules\n- **Artifact directory**: `/tmp/xv/pr-review/`\n\n### Teammates\n\n| Name | Type | Role | Files Owned |\n|------|------|------|-------------|\n| `security-reviewer` | Explore | Security audit: injection, auth bypass, secret leaks | `src/auth/middleware.py` (primary) |\n| `perf-reviewer` | Explore | Performance: hot paths, async patterns, middleware overhead | `src/api/routes.py` (primary) |\n| `correctness-reviewer` | Explore | Logic correctness, edge cases, error handling | All 3 files |\n| `xv-codex` | general-purpose | Codex CLI cross-verification across all 3 files | `/tmp/xv/pr-review/` artifacts |\n| `synthesizer` | general-purpose | Read all artifacts, produce unified verdict | `/tmp/xv/pr-review/synthesis_report.md` |\n\n### Task Dependencies\n\n```\nTask 1 (Security Review)     \u2500\u2510\nTask 2 (Performance Review)  \u2500\u253c\u2500\u25ba Task 5 (Synthesis)\nTask 3 (Correctness Review)  \u2500\u2524\nTask 4 (Codex XV Review)     \u2500\u2518\n```\n\n---\n\n## Exact Tool Call Sequence\n\n### Phase 1: Team Creation and Artifact Setup\n\n#### Call 1: TeamCreate\n\n```\nTeamCreate(\n  team_name=\"pr-review\",\n  description=\"PR code review with security/performance/correctness analysis and Codex cross-verification\"\n)\n```\n\n### Phase 2: Task Creation\n\n#### Call 2: TaskCreate \u2014 Security Review\n\n```\nTaskCreate(\n  subject=\"Security Review\",\n  description=\"Review src/auth/middleware.py, src/api/routes.py, tests/test_auth.py for security vulnerabilities: injection attacks, authentication bypass, authorization flaws, secret/credential leaks, CSRF, session management issues. Write findings to /tmp/xv/pr-review/claude_security_review.md using standard artifact format.\"\n)\n```\n\n#### Call 3: TaskCreate \u2014 Performance Review\n\n```\nTaskCreate(\n  subject=\"Performance Review\",\n  description=\"Review src/auth/middleware.py, src/api/routes.py for performance concerns: middleware overhead, N+1 queries, blocking I/O in async handlers, unnecessary computation on hot paths, caching opportunities. Write findings to /tmp/xv/pr-review/claude_perf_review.md using standard artifact format.\"\n)\n```\n\n#### Call 4: TaskCreate \u2014 Correctness Review\n\n```\nTaskCreate(\n  subject=\"Correctness Review\",\n  description=\"Review src/auth/middleware.py, src/api/routes.py, tests/test_auth.py for correctness: logic errors, edge cases (null/empty input, boundary values), error handling gaps, race conditions, test coverage gaps. Write findings to /tmp/xv/pr-review/claude_correctness_review.md using standard artifact format.\"\n)\n```\n\n#### Call 5: TaskCreate \u2014 Codex Cross-Verification\n\n```\nTaskCreate(\n  subject=\"Codex Cross-Verification\",\n  description=\"Run Codex CLI to independently review all 3 changed files. Drop artifacts in /tmp/xv/pr-review/. Send verdict summary to synthesizer via SendMessage.\"\n)\n```\n\n#### Call 6: TaskCreate \u2014 Synthesis\n\n```\nTaskCreate(\n  subject=\"Synthesis Report\",\n  description=\"Read ALL review artifacts from /tmp/xv/pr-review/ (claude_security_review.md, claude_perf_review.md, claude_correctness_review.md, codex_review_middleware.md, codex_review_routes.md, codex_review_tests.md). Produce unified cross-verification synthesis report with confidence scoring. Write to /tmp/xv/pr-review/synthesis_report.md.\"\n)\n```\n\n### Phase 3: Task Dependency Setup\n\n#### Call 7: TaskUpdate \u2014 Synthesis blocked by all reviews\n\n```\nTaskUpdate(taskId=\"5\", addBlockedBy=[\"1\", \"2\", \"3\", \"4\"])\n```\n\n### Phase 4: Spawn Teammates (parallel)\n\n#### Call 8: Agent \u2014 security-reviewer\n\n```\nAgent(\n  team_name=\"pr-review\",\n  name=\"security-reviewer\",\n  subagent_type=\"Explore\",\n  prompt=\"You are a security-focused code reviewer for a PR. Your job:\n\n1. mkdir -p /tmp/xv/pr-review/\n2. Read and analyze these changed files for security vulnerabilities:\n   - src/auth/middleware.py \u2014 Focus on: authentication logic, token validation, session handling, middleware bypass vectors\n   - src/api/routes.py \u2014 Focus on: input validation, injection (SQL/NoSQL/command), authorization checks on each endpoint, IDOR\n   - tests/test_auth.py \u2014 Focus on: whether security-critical paths are tested, missing negative test cases\n\n3. Write your findings to /tmp/xv/pr-review/claude_security_review.md using this EXACT format:\n   # Claude Security Review \u2014 PR Changed Files\n   Date: 2026-03-20\n   Status: PASS | FAIL | PASS_WITH_COMMENTS\n\n   ## Findings\n   - [CRITICAL] File, Line N: Description\n   - [HIGH] File, Line N: Description\n   - [MEDIUM] Description\n   - [LOW] Description\n\n   ## Summary\n   1-3 sentence overall security assessment.\n\n   ## Verdict: APPROVE | REQUEST_CHANGES\n   If REQUEST_CHANGES, list what must change.\n\n4. After writing the artifact, send a summary of your top findings to 'synthesizer' via SendMessage.\n5. Mark your task as completed.\",\n  description=\"Security audit of PR changes\"\n)\n```\n\n#### Call 9: Agent \u2014 perf-reviewer\n\n```\nAgent(\n  team_name=\"pr-review\",\n  name=\"perf-reviewer\",\n  subagent_type=\"Explore\",\n  prompt=\"You are a performance-focused code reviewer for a PR. Your job:\n\n1. mkdir -p /tmp/xv/pr-review/\n2. Read and analyze these changed files for performance issues:\n   - src/auth/middleware.py \u2014 Focus on: middleware execution overhead per request, database lookups in hot path, token cache strategy, blocking operations\n   - src/api/routes.py \u2014 Focus on: N+1 query patterns, unnecessary serialization, missing pagination, async/await correctness, response size\n   - tests/test_auth.py \u2014 Focus on: test efficiency, fixture reuse\n\n3. Write your findings to /tmp/xv/pr-review/claude_perf_review.md using this EXACT format:\n   # Claude Performance Review \u2014 PR Changed Files\n   Date: 2026-03-20\n   Status: PASS | FAIL | PASS_WITH_COMMENTS\n\n   ## Findings\n   - [CRITICAL] File, Line N: Description\n   - [HIGH] File, Line N: Description\n   - [MEDIUM] Description\n   - [LOW] Description\n\n   ## Summary\n   1-3 sentence overall performance assessment.\n\n   ## Verdict: APPROVE | REQUEST_CHANGES\n   If REQUEST_CHANGES, list what must change.\n\n4. After writing the artifact, send a summary of your top findings to 'synthesizer' via SendMessage.\n5. Mark your task as completed.\",\n  description=\"Performance analysis of PR changes\"\n)\n```\n\n#### Call 10: Agent \u2014 correctness-reviewer\n\n```\nAgent(\n  team_name=\"pr-review\",\n  name=\"correctness-reviewer\",\n  subagent_type=\"Explore\",\n  prompt=\"You are a correctness-focused code reviewer for a PR. Your job:\n\n1. mkdir -p /tmp/xv/pr-review/\n2. Read and analyze these changed files for correctness issues:\n   - src/auth/middleware.py \u2014 Focus on: logic errors in auth flow, edge cases (expired tokens, malformed headers, missing fields), error propagation\n   - src/api/routes.py \u2014 Focus on: business logic correctness, error handling (proper HTTP status codes, error messages), race conditions, input boundary handling\n   - tests/test_auth.py \u2014 Focus on: test correctness (do assertions actually validate the right thing?), missing edge case tests, test isolation, mock correctness\n\n3. Write your findings to /tmp/xv/pr-review/claude_correctness_review.md using this EXACT format:\n   # Claude Correctness Review \u2014 PR Changed Files\n   Date: 2026-03-20\n   Status: PASS | FAIL | PASS_WITH_COMMENTS\n\n   ## Findings\n   - [CRITICAL] File, Line N: Description\n   - [HIGH] File, Line N: Description\n   - [MEDIUM] Description\n   - [LOW] Description\n\n   ## Summary\n   1-3 sentence overall correctness assessment.\n\n   ## Verdict: APPROVE | REQUEST_CHANGES\n   If REQUEST_CHANGES, list what must change.\n\n4. After writing the artifact, send a summary of your top findings to 'synthesizer' via SendMessage.\n5. Mark your task as completed.\",\n  description=\"Correctness analysis of PR changes\"\n)\n```\n\n#### Call 11: Agent \u2014 xv-codex\n\n```\nAgent(\n  team_name=\"pr-review\",\n  name=\"xv-codex\",\n  subagent_type=\"general-purpose\",\n  prompt=\"You are a cross-verification agent. Your job is to run Codex CLI to independently review the PR's changed files. Follow these steps exactly:\n\n1. Create artifact directory:\n   mkdir -p /tmp/xv/pr-review/\n\n2. Run Codex CLI for each changed file (run in parallel with & and wait):\n\n   codex exec --ephemeral --full-auto -s read-only -o /tmp/xv/pr-review/codex_review_middleware.md \\\n     \\\"$(cat <<'PROMPT'\n   You are performing an independent code review for cross-verification.\n   Another AI has already reviewed this code \u2014 your job is to find things it might have missed.\n\n   ## Output Format (MUST follow exactly)\n   # Codex Review \u2014 middleware.py\n   Date: 2026-03-20\n   Status: PASS | FAIL | PASS_WITH_COMMENTS\n\n   ## Findings\n   - [SEVERITY] Line N: Description\n\n   ## Summary\n   1-3 sentences.\n\n   ## Verdict: APPROVE | REQUEST_CHANGES\n\n   ## Review Criteria\n   1. Security: injection, auth bypass, data exposure, CSRF\n   2. Performance: middleware overhead, blocking I/O, caching\n   3. Correctness: logic errors, edge cases, error handling\n   4. Race conditions, concurrency issues\n\n   ## Code to Review\n   $(cat src/auth/middleware.py)\n   PROMPT\n   )\\\" &\n   PID1=$!\n\n   codex exec --ephemeral --full-auto -s read-only -o /tmp/xv/pr-review/codex_review_routes.md \\\n     \\\"$(cat <<'PROMPT'\n   You are performing an independent code review for cross-verification.\n   Another AI has already reviewed this code \u2014 your job is to find things it might have missed.\n\n   ## Output Format (MUST follow exactly)\n   # Codex Review \u2014 routes.py\n   Date: 2026-03-20\n   Status: PASS | FAIL | PASS_WITH_COMMENTS\n\n   ## Findings\n   - [SEVERITY] Line N: Description\n\n   ## Summary\n   1-3 sentences.\n\n   ## Verdict: APPROVE | REQUEST_CHANGES\n\n   ## Review Criteria\n   1. Security: input validation, authorization on endpoints, IDOR\n   2. Performance: N+1 queries, async correctness, response size\n   3. Correctness: HTTP status codes, error handling, business logic\n   4. API design: RESTful conventions, consistency\n\n   ## Code to Review\n   $(cat src/api/routes.py)\n   PROMPT\n   )\\\" &\n   PID2=$!\n\n   codex exec --ephemeral --full-auto -s read-only -o /tmp/xv/pr-review/codex_review_tests.md \\\n     \\\"$(cat <<'PROMPT'\n   You are performing an independent code review for cross-verification.\n   Another AI has already reviewed this code \u2014 your job is to find things it might have missed.\n\n   ## Output Format (MUST follow exactly)\n   # Codex Review \u2014 test_auth.py\n   Date: 2026-03-20\n   Status: PASS | FAIL | PASS_WITH_COMMENTS\n\n   ## Findings\n   - [SEVERITY] Line N: Description\n\n   ## Summary\n   1-3 sentences.\n\n   ## Verdict: APPROVE | REQUEST_CHANGES\n\n   ## Review Criteria\n   1. Test coverage: are all auth flows tested?\n   2. Assertion quality: do assertions validate the right thing?\n   3. Edge cases: expired tokens, malformed input, missing fields\n   4. Test isolation: proper mocking, no shared state leaks\n\n   ## Code to Review\n   $(cat tests/test_auth.py)\n   PROMPT\n   )\\\" &\n   PID3=$!\n\n   # Wait for all with timeout\n   timeout 120 bash -c \\\"wait $PID1\\\" || echo 'Codex middleware review timed out'\n   timeout 120 bash -c \\\"wait $PID2\\\" || echo 'Codex routes review timed out'\n   timeout 120 bash -c \\\"wait $PID3\\\" || echo 'Codex tests review timed out'\n\n3. Verify all artifacts were written:\n   ls -la /tmp/xv/pr-review/codex_review_*.md\n   cat /tmp/xv/pr-review/codex_review_middleware.md | head -5\n   cat /tmp/xv/pr-review/codex_review_routes.md | head -5\n   cat /tmp/xv/pr-review/codex_review_tests.md | head -5\n\n4. Send a summary of Codex's verdicts (per file: APPROVE/REQUEST_CHANGES + top findings) to 'synthesizer' via SendMessage.\n\n5. Mark your task as completed.\",\n  description=\"Run Codex CLI for independent cross-verification review of all PR files\"\n)\n```\n\n#### Call 12: Agent \u2014 synthesizer\n\n```\nAgent(\n  team_name=\"pr-review\",\n  name=\"synthesizer\",\n  subagent_type=\"general-purpose\",\n  prompt=\"You are the synthesis agent. You MUST wait until all 4 review tasks are completed before starting. Your job:\n\n1. Read ALL review artifacts from /tmp/xv/pr-review/:\n   - /tmp/xv/pr-review/claude_security_review.md\n   - /tmp/xv/pr-review/claude_perf_review.md\n   - /tmp/xv/pr-review/claude_correctness_review.md\n   - /tmp/xv/pr-review/codex_review_middleware.md\n   - /tmp/xv/pr-review/codex_review_routes.md\n   - /tmp/xv/pr-review/codex_review_tests.md\n\n2. Cross-reference findings between Claude reviewers and Codex:\n   - CRITICAL confidence: Both Claude AND Codex flag the same issue -> Must fix\n   - HIGH confidence: Multiple Claude reviewers flag it OR one Claude + one Codex -> Should fix\n   - MEDIUM confidence: Only one reviewer flags it -> Investigate, likely false positive\n\n3. Write the synthesis report to /tmp/xv/pr-review/synthesis_report.md using this format:\n\n   # Cross-Verification Synthesis Report \u2014 PR Code Review\n   Date: 2026-03-20\n\n   ## Changed Files\n   - src/auth/middleware.py\n   - src/api/routes.py\n   - tests/test_auth.py\n\n   ## Findings by Confidence Level\n\n   ### CRITICAL (Multiple reviewers + Codex agree)\n   | Finding | Security | Performance | Correctness | Codex | Action |\n   |---------|----------|-------------|-------------|-------|--------|\n   | ... | Yes/No | Yes/No | Yes/No | Yes/No | Must fix |\n\n   ### HIGH (2+ reviewers agree)\n   | Finding | Security | Performance | Correctness | Codex | Action |\n   |---------|----------|-------------|-------------|-------|--------|\n   | ... | Yes/No | Yes/No | Yes/No | Yes/No | Should fix |\n\n   ### MEDIUM (Single reviewer flags)\n   | Finding | Source | Action |\n   |---------|--------|--------|\n   | ... | ... | Investigate |\n\n   ## Disagreement Analysis\n   Where Claude and Codex reviewers disagreed, explain why and which is more likely correct.\n\n   ## Per-File Summary\n   ### src/auth/middleware.py\n   Overall: APPROVE | REQUEST_CHANGES\n   Key findings: ...\n\n   ### src/api/routes.py\n   Overall: APPROVE | REQUEST_CHANGES\n   Key findings: ...\n\n   ### tests/test_auth.py\n   Overall: APPROVE | REQUEST_CHANGES\n   Key findings: ...\n\n   ## Final Verdict: APPROVE | REQUEST_CHANGES\n   Consolidated recommendation with prioritized action items.\n\n4. Send the final verdict and top-3 action items to the lead (team owner) via SendMessage.\n5. Mark your task as completed.\",\n  description=\"Synthesize all Claude and Codex review artifacts into unified verdict\"\n)\n```\n\n### Phase 5: Task Assignment\n\n#### Call 13: TaskUpdate \u2014 Assign tasks to teammates\n\n```\nTaskUpdate(taskId=\"1\", owner=\"security-reviewer\")\nTaskUpdate(taskId=\"2\", owner=\"perf-reviewer\")\nTaskUpdate(taskId=\"3\", owner=\"correctness-reviewer\")\nTaskUpdate(taskId=\"4\", owner=\"xv-codex\")\nTaskUpdate(taskId=\"5\", owner=\"synthesizer\")\n```\n\n### Phase 6: Monitor Progress\n\n#### Call 14: Periodic monitoring\n\n```\nTaskList()   # Check status of all tasks periodically\nTaskGet(taskId=\"5\")  # Check synthesis task specifically\n```\n\n### Phase 7: Shutdown Sequence\n\nAfter synthesizer completes and sends its final verdict:\n\n#### Call 15: Read synthesis report\n\n```\n# Lead reads the final report\nRead /tmp/xv/pr-review/synthesis_report.md\n```\n\n#### Call 16: Shutdown teammates (in order: workers first, then synthesizer)\n\n```\nSendMessage(type=\"shutdown_request\", recipient=\"security-reviewer\", content=\"Review complete. Shutting down.\")\nSendMessage(type=\"shutdown_request\", recipient=\"perf-reviewer\", content=\"Review complete. Shutting down.\")\nSendMessage(type=\"shutdown_request\", recipient=\"correctness-reviewer\", content=\"Review complete. Shutting down.\")\nSendMessage(type=\"shutdown_request\", recipient=\"xv-codex\", content=\"Review complete. Shutting down.\")\nSendMessage(type=\"shutdown_request\", recipient=\"synthesizer\", content=\"Synthesis complete. Shutting down.\")\n```\n\n#### Call 17: Delete team\n\n```\nTeamDelete()\n```\n\n### Phase 8: Report to User\n\nPresent the synthesis report contents to the user, highlighting:\n1. CRITICAL findings that must be fixed\n2. HIGH findings that should be investigated\n3. Areas of agreement/disagreement between Claude and Codex\n4. Final verdict (APPROVE or REQUEST_CHANGES)\n\n---\n\n## Artifact File Map\n\n```\n/tmp/xv/pr-review/\n\u251c\u2500\u2500 claude_security_review.md      # security-reviewer output\n\u251c\u2500\u2500 claude_perf_review.md          # perf-reviewer output\n\u251c\u2500\u2500 claude_correctness_review.md   # correctness-reviewer output\n\u251c\u2500\u2500 codex_review_middleware.md     # xv-codex Codex CLI output for middleware.py\n\u251c\u2500\u2500 codex_review_routes.md         # xv-codex Codex CLI output for routes.py\n\u251c\u2500\u2500 codex_review_tests.md          # xv-codex Codex CLI output for test_auth.py\n\u2514\u2500\u2500 synthesis_report.md            # synthesizer final report\n```\n\n## Summary\n\n- **Total tool calls**: ~25-30 (TeamCreate, 5x TaskCreate, 1x TaskUpdate for dependencies, 5x Agent spawn, 5x TaskUpdate for owners, periodic TaskList/TaskGet, Read synthesis, 5x SendMessage shutdown, TeamDelete)\n- **Parallelism**: 4 reviewers work simultaneously; synthesizer waits for all via task dependency blocking\n- **Cross-verification**: Codex CLI reviews all 3 files independently in parallel within the xv-codex teammate\n- **Confidence scoring**: Findings are rated CRITICAL/HIGH/MEDIUM based on reviewer agreement per cross-verification methodology\n"}], "grading": {"expectations": [{"text": "TeamCreate\uac00 \ud638\ucd9c\ub428", "passed": true, "evidence": "Phase 1\uc5d0\uc11c TeamCreate(team_name=\"pr-review\", ...) \ud638\ucd9c"}, {"text": "\ubcf4\uc548, \uc131\ub2a5, \uc815\ud655\uc131 \uc911 \ucd5c\uc18c 2\uac1c \uad00\uc810\uc758 \uc804\ub2f4 reviewer teammate\uac00 \uc874\uc7ac", "passed": true, "evidence": "3\uac1c \uad00\uc810 \ubaa8\ub450 \uc804\ub2f4: security-reviewer, perf-reviewer, correctness-reviewer"}, {"text": "xv-codex \ub610\ub294 cross-verification \uc804\ub2f4 teammate\uac00 \uc874\uc7ac", "passed": true, "evidence": "xv-codex teammate (general-purpose)\uac00 Codex CLI \uc804\ub2f4"}, {"text": "Codex CLI \ud638\ucd9c\uc774 teammate prompt\uc5d0 \ud3ec\ud568\ub428", "passed": true, "evidence": "xv-codex prompt\uc5d0 3\uac1c\uc758 'codex exec --ephemeral --full-auto -s read-only -o /tmp/xv/pr-review/codex_review_*.md' \uba85\ub839\uc5b4 \ud3ec\ud568, \ubcd1\ub82c \uc2e4\ud589(&+wait) \ud328\ud134 \uc0ac\uc6a9"}, {"text": "/tmp/xv/ \uc544\ud2f0\ud329\ud2b8 \ub514\ub809\ud1a0\ub9ac \ud328\ud134\uc774 \uc0ac\uc6a9\ub428", "passed": true, "evidence": "/tmp/xv/pr-review/ \ub514\ub809\ud1a0\ub9ac\uc5d0 7\uac1c \uc544\ud2f0\ud329\ud2b8 \ud30c\uc77c \ub9e4\ud551 (3 Claude + 3 Codex + 1 synthesis)"}, {"text": "synthesizer \uc5ed\ud560\uc758 teammate\uac00 \uacb0\uacfc\ub97c \uc885\ud569", "passed": true, "evidence": "synthesizer teammate\uac00 6\uac1c \ub9ac\ubdf0 \uc544\ud2f0\ud329\ud2b8\ub97c \uc77d\uace0 confidence scoring (CRITICAL/HIGH/MEDIUM)\uc73c\ub85c \uc885\ud569 \ubcf4\uace0\uc11c \uc791\uc131"}, {"text": "\ubaa8\ub4e0 Agent\uc5d0 team_name\uc774 \ud3ec\ud568\ub428", "passed": true, "evidence": "5\uac1c Agent \ud638\ucd9c \ubaa8\ub450 team_name=\"pr-review\" \ud3ec\ud568 \ud655\uc778"}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1.0}}}, {"id": "eval-3-code-review-xv-without_skill", "prompt": "\uc774 PR\uc758 \ucf54\ub4dc\ub97c \ub9ac\ubdf0\ud574\uc918. \ubcf4\uc548, \uc131\ub2a5, \uc815\ud655\uc131 \uad00\uc810\uc5d0\uc11c \uc885\ud569\uc801\uc73c\ub85c \uac80\ud1a0\ud558\uace0, Codex\ub85c\ub3c4 \ud06c\ub85c\uc2a4 \uac80\uc99d\ud574\uc918. \ubcc0\uacbd \ud30c\uc77c: src/auth/middleware.py, src/api/routes.py, tests/test_auth.py", "eval_id": 3, "outputs": [{"name": "execution_plan.md", "type": "text", "content": "# Execution Plan: PR Code Review with Cross-Verification\n\n## Task Summary\n\nReview PR changes in `src/auth/middleware.py`, `src/api/routes.py`, `tests/test_auth.py` from security, performance, and correctness perspectives, plus cross-verify with Codex.\n\n---\n\n## Phase 1: Gather Context (Parallel)\n\nAll of these calls are independent and can be executed simultaneously.\n\n### Tool Call 1a: Get PR diff for the three files\n```\nTool: Bash\ncommand: \"git diff main...HEAD -- src/auth/middleware.py src/api/routes.py tests/test_auth.py\"\n```\n(If the PR is on a different branch, adjust accordingly. If this is a GitHub PR, use `gh pr diff <PR_NUMBER>` instead.)\n\n### Tool Call 1b: Read full file \u2014 src/auth/middleware.py\n```\nTool: Read\nfile_path: \"<repo_root>/src/auth/middleware.py\"\n```\n\n### Tool Call 1c: Read full file \u2014 src/api/routes.py\n```\nTool: Read\nfile_path: \"<repo_root>/src/api/routes.py\"\n```\n\n### Tool Call 1d: Read full file \u2014 tests/test_auth.py\n```\nTool: Read\nfile_path: \"<repo_root>/tests/test_auth.py\"\n```\n\n### Tool Call 1e: Check for dependency/config files\n```\nTool: Glob\npattern: \"**/requirements*.txt\"\n```\n```\nTool: Glob\npattern: \"**/pyproject.toml\"\n```\n(To understand which auth libraries are in use \u2014 e.g., PyJWT, passlib, etc.)\n\n### Tool Call 1f: Search for related auth patterns across the codebase\n```\nTool: Grep\npattern: \"secret|SECRET|jwt|JWT|token|password|hash\"\npath: \"<repo_root>/src/\"\noutput_mode: \"files_with_matches\"\n```\n\n---\n\n## Phase 2: Deep Security Review (Sequential)\n\nThese depend on the file contents obtained in Phase 1.\n\n### Tool Call 2a: Search for hardcoded secrets\n```\nTool: Grep\npattern: \"(secret|password|api_key|token)\\\\s*=\\\\s*[\\\"'][^\\\"']{4,}\"\npath: \"<repo_root>/src/\"\noutput_mode: \"content\"\n-i: true\n```\n\n### Tool Call 2b: Check for SQL injection patterns\n```\nTool: Grep\npattern: \"f\\\"|f'|\\.format\\\\(|%s.*execute\"\npath: \"<repo_root>/src/\"\noutput_mode: \"content\"\n```\n\n### Tool Call 2c: Check for unsafe deserialization / eval\n```\nTool: Grep\npattern: \"pickle\\\\.|eval\\\\(|exec\\\\(|yaml\\\\.load\\\\(\"\npath: \"<repo_root>/src/\"\noutput_mode: \"content\"\n```\n\n### Tool Call 2d: Check JWT configuration (algorithm, expiry, verification)\n```\nTool: Grep\npattern: \"algorithms|verify|decode|encode|exp|iat|iss\"\npath: \"<repo_root>/src/auth/\"\noutput_mode: \"content\"\n-C: 3\n```\n\n### Tool Call 2e: Check for missing authentication on routes\n```\nTool: Grep\npattern: \"@(app|router)\\\\.(get|post|put|delete|patch)\"\npath: \"<repo_root>/src/api/routes.py\"\noutput_mode: \"content\"\n-C: 2\n```\n\n---\n\n## Phase 3: Performance Review (Parallel where possible)\n\n### Tool Call 3a: Look for N+1 query patterns or unbounded loops\n```\nTool: Grep\npattern: \"for .* in .*\\\\.all\\\\(|select_related|prefetch_related|\\.query\"\npath: \"<repo_root>/src/\"\noutput_mode: \"content\"\n-C: 3\n```\n\n### Tool Call 3b: Check for blocking I/O in async contexts\n```\nTool: Grep\npattern: \"(async def|await).*\"\npath: \"<repo_root>/src/\"\noutput_mode: \"content\"\n-C: 2\n```\n\n### Tool Call 3c: Check for caching patterns\n```\nTool: Grep\npattern: \"cache|lru_cache|redis|memcache\"\npath: \"<repo_root>/src/\"\noutput_mode: \"content\"\n-i: true\n```\n\n---\n\n## Phase 4: Correctness Review (Sequential)\n\n### Tool Call 4a: Review test coverage \u2014 check what's tested\n```\nTool: Grep\npattern: \"def test_\"\npath: \"<repo_root>/tests/test_auth.py\"\noutput_mode: \"content\"\n```\n\n### Tool Call 4b: Check for proper error handling\n```\nTool: Grep\npattern: \"try:|except |raise |HTTPException|abort\"\npath: \"<repo_root>/src/\"\noutput_mode: \"content\"\n-C: 2\n```\n\n### Tool Call 4c: Run existing tests to verify they pass\n```\nTool: Bash\ncommand: \"cd <repo_root> && python -m pytest tests/test_auth.py -v --tb=short 2>&1 | head -100\"\ntimeout: 60000\n```\n\n---\n\n## Phase 5: Codex Cross-Verification\n\nThe user requested cross-verification with \"Codex.\" In a standard Claude Code environment without specialized skills loaded, there are two interpretations:\n\n### Option A: OpenAI Codex CLI (if installed)\n\n```\nTool: Bash\ncommand: \"which codex 2>/dev/null || echo 'codex not found'\"\n```\n\nIf codex CLI is available:\n```\nTool: Bash\ncommand: \"codex --approval-mode full-auto 'Review the following files for security, performance, and correctness issues: src/auth/middleware.py, src/api/routes.py, tests/test_auth.py. Focus on: 1) Auth bypass vulnerabilities 2) Token handling flaws 3) Missing input validation 4) Performance bottlenecks 5) Test coverage gaps'\"\ntimeout: 120000\n```\n\n### Option B: Codex CLI not available\n\nIf codex is not installed, report to the user that the Codex cross-verification cannot be performed in this environment and suggest alternatives:\n- Install Codex CLI: `npm install -g @openai/codex`\n- Use a web-based Codex interface manually\n- Rely on the thorough review already performed by Claude\n\n---\n\n## Phase 6: Synthesize Review Report\n\nNo tool calls needed \u2014 this is a synthesis step where I compile all findings from Phases 1-5 into a structured code review covering:\n\n1. **Security Findings** (Critical / High / Medium / Low)\n2. **Performance Findings**\n3. **Correctness Findings**\n4. **Test Coverage Assessment**\n5. **Codex Cross-Verification Results** (if available)\n6. **Recommendations**\n\n---\n\n## Execution Strategy Summary\n\n| Phase | Approach | Rationale |\n|-------|----------|-----------|\n| 1 - Gather Context | **Parallel** (5-6 calls at once) | All reads are independent |\n| 2 - Security Review | **Parallel** (5 grep calls) | Each grep is independent |\n| 3 - Performance Review | **Parallel** (3 calls at once) | Independent searches |\n| 4 - Correctness Review | **Mostly parallel**, test run sequential | Tests depend on nothing but need time |\n| 5 - Codex Cross-Verify | **Sequential** | Must check availability first |\n| 6 - Synthesize | **Single step** | Depends on all prior phases |\n\n### Why NOT use subagents?\n\nIn this environment, there is no Agent tool or subagent dispatch mechanism available. All work is done directly with the available tools (Bash, Read, Write, Edit, Grep, Glob). This is actually fine for a code review of 3 files \u2014 the overhead of subagent coordination would exceed the benefit. The key optimization is parallelizing independent tool calls within each phase.\n\n### Handling the Codex Cross-Verification\n\nWithout a dedicated Codex skill or integration:\n1. First check if the `codex` CLI binary is installed on the system.\n2. If yes, invoke it in `full-auto` approval mode with a focused review prompt.\n3. If no, transparently inform the user and explain the limitation.\n4. The Claude-based review itself already provides comprehensive coverage; Codex would serve as a second opinion, not a replacement.\n\n---\n\n## Total Estimated Tool Calls\n\n- Phase 1: ~6 parallel calls\n- Phase 2: ~5 parallel calls\n- Phase 3: ~3 parallel calls\n- Phase 4: ~3 calls (2 parallel + 1 sequential)\n- Phase 5: 1-2 sequential calls\n- **Total: ~18-20 tool calls across ~5-6 round trips**\n"}], "grading": {"expectations": [{"text": "TeamCreate\uac00 \ud638\ucd9c\ub428", "passed": false, "evidence": "TeamCreate \ubbf8\uc0ac\uc6a9. 6\uac1c Phase\uc758 \uc9c1\uc811 \ub3c4\uad6c \ud638\ucd9c\ub85c \uad6c\uc131"}, {"text": "\ubcf4\uc548, \uc131\ub2a5, \uc815\ud655\uc131 \uc911 \ucd5c\uc18c 2\uac1c \uad00\uc810\uc758 \uc804\ub2f4 reviewer teammate\uac00 \uc874\uc7ac", "passed": false, "evidence": "\uc804\ub2f4 reviewer teammate \uc5c6\uc74c. \ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8\uac00 Phase 2(Security), Phase 3(Performance), Phase 4(Correctness)\ub97c \uc21c\ucc28 \uc2e4\ud589. \uac01 \uad00\uc810\uc740 grep \ud328\ud134\uc73c\ub85c\ub9cc \uac80\uc0ac"}, {"text": "xv-codex \ub610\ub294 cross-verification \uc804\ub2f4 teammate\uac00 \uc874\uc7ac", "passed": false, "evidence": "\uc804\ub2f4 teammate \uc5c6\uc74c. Phase 5\uc5d0\uc11c 'which codex' \ud655\uc778 \ud6c4 \uac00\ub2a5\ud558\uba74 \uc9c1\uc811 \ud638\ucd9c\ud558\ub294 \ubc29\uc2dd"}, {"text": "Codex CLI \ud638\ucd9c\uc774 teammate prompt\uc5d0 \ud3ec\ud568\ub428", "passed": false, "evidence": "teammate prompt \uc790\uccb4\uac00 \uc5c6\uc74c. Codex\ub294 Phase 5\uc5d0\uc11c Bash\ub85c \uc9c1\uc811 \ud638\ucd9c \uc2dc\ub3c4\ud558\ub098 'Option B: Codex CLI not available' \ub300\uc548\ub3c4 \uc81c\uc2dc"}, {"text": "/tmp/xv/ \uc544\ud2f0\ud329\ud2b8 \ub514\ub809\ud1a0\ub9ac \ud328\ud134\uc774 \uc0ac\uc6a9\ub428", "passed": false, "evidence": "/tmp/xv/ \ud328\ud134 \ubbf8\uc0ac\uc6a9. \uc544\ud2f0\ud329\ud2b8 \ud30c\uc77c \uac1c\ub150 \uc790\uccb4\uac00 \uc801\uc6a9\ub418\uc9c0 \uc54a\uc74c"}, {"text": "synthesizer \uc5ed\ud560\uc758 teammate\uac00 \uacb0\uacfc\ub97c \uc885\ud569", "passed": false, "evidence": "synthesizer teammate \uc5c6\uc74c. Phase 6\uc5d0\uc11c \ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8\uac00 'No tool calls needed \u2014 this is a synthesis step' \uc73c\ub85c \uc885\ud569"}, {"text": "\ubaa8\ub4e0 Agent\uc5d0 team_name\uc774 \ud3ec\ud568\ub428", "passed": false, "evidence": "Agent \ub3c4\uad6c \uc790\uccb4\uac00 \ubbf8\uc0ac\uc6a9. 'there is no Agent tool or subagent dispatch mechanism available' \uba85\uc2dc"}], "summary": {"passed": 0, "failed": 7, "total": 7, "pass_rate": 0.0}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "agent-teams", "skill_path": "/home/lazydok/src/cc-skills-template/.claude/skills/agent-teams", "executor_model": "claude-opus-4-6", "analyzer_model": "claude-opus-4-6", "timestamp": "2026-03-20T00:00:00Z", "evals_run": [1, 2, 3], "runs_per_configuration": 1}, "runs": [{"eval_id": 1, "eval_name": "fullstack-feature-auth-api", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 138.7, "tokens": 20728, "tool_calls": 6, "errors": 0}, "expectations": [{"text": "TeamCreate\uac00 \uba3c\uc800 \ud638\ucd9c\ub418\uc5b4 \ud300\uc774 \uc0dd\uc131\ub428", "passed": true, "evidence": "Step 1\uc5d0\uc11c TeamCreate \ud638\ucd9c\uc774 \ubaa8\ub4e0 Agent\ubcf4\ub2e4 \uc55e\uc5d0 \uc704\uce58"}, {"text": "\ubaa8\ub4e0 Agent \ud638\ucd9c\uc5d0 team_name \ud3ec\ud568", "passed": true, "evidence": "5\uac1c Agent \ubaa8\ub450 team_name=\"auth-feature\""}, {"text": "\ubaa8\ub4e0 Agent \ud638\ucd9c\uc5d0 name \ud3ec\ud568", "passed": true, "evidence": "5\uac1c \ubaa8\ub450 \uace0\uc720 name \ud3ec\ud568"}, {"text": "\ucd5c\uc18c 3\uba85 teammate (API/service/test \ubd84\ub9ac)", "passed": true, "evidence": "5\uba85 \uc2a4\ud3f0"}, {"text": "\uad6c\uccb4\uc801\uc778 \ud30c\uc77c \uacbd\ub85c \ud3ec\ud568", "passed": true, "evidence": "\uac01 prompt\uc5d0 \uad6c\uccb4\uc801 \ud30c\uc77c \uacbd\ub85c"}, {"text": "\ud14c\uc2a4\ud2b8 \uc804\ub2f4 teammate \uc874\uc7ac", "passed": true, "evidence": "auth-tests \uc804\ub2f4"}, {"text": "\ud30c\uc77c \uc18c\uc720\uad8c \ube44\uacb9\uce68", "passed": true, "evidence": "16\ud30c\uc77c \ubaa8\ub450 \ub2e8\uc77c owner"}]}, {"eval_id": 1, "eval_name": "fullstack-feature-auth-api", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.0, "passed": 0, "failed": 7, "total": 7, "time_seconds": 118.8, "tokens": 16459, "tool_calls": 6, "errors": 0}, "expectations": [{"text": "TeamCreate\uac00 \uba3c\uc800 \ud638\ucd9c\ub418\uc5b4 \ud300\uc774 \uc0dd\uc131\ub428", "passed": false, "evidence": "TeamCreate \ubbf8\uc0ac\uc6a9"}, {"text": "\ubaa8\ub4e0 Agent \ud638\ucd9c\uc5d0 team_name \ud3ec\ud568", "passed": false, "evidence": "Agent \ubbf8\uc0ac\uc6a9"}, {"text": "\ubaa8\ub4e0 Agent \ud638\ucd9c\uc5d0 name \ud3ec\ud568", "passed": false, "evidence": "Agent \ubbf8\uc0ac\uc6a9"}, {"text": "\ucd5c\uc18c 3\uba85 teammate", "passed": false, "evidence": "\ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8 \uc9c1\uc811 \uad6c\ud604"}, {"text": "\uad6c\uccb4\uc801\uc778 \ud30c\uc77c \uacbd\ub85c \ud3ec\ud568", "passed": false, "evidence": "teammate prompt \uc5c6\uc74c"}, {"text": "\ud14c\uc2a4\ud2b8 \uc804\ub2f4 teammate \uc874\uc7ac", "passed": false, "evidence": "\ud14c\uc2a4\ud2b8\ub97c \uc18c\uc2a4\uc640 \ud568\uaed8 \ubcd1\ub82c Write"}, {"text": "\ud30c\uc77c \uc18c\uc720\uad8c \ube44\uacb9\uce68", "passed": false, "evidence": "\ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8\uac00 \ubaa8\ub4e0 \ud30c\uc77c \uc18c\uc720"}]}, {"eval_id": 2, "eval_name": "debugging-order-processing-bug", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 132.7, "tokens": 19258, "tool_calls": 4, "errors": 0}, "expectations": [{"text": "TeamCreate \ud638\ucd9c", "passed": true, "evidence": "team_name=\"order-bug-investigation\""}, {"text": "team_name + name \ud3ec\ud568", "passed": true, "evidence": "5\uac1c Agent \ubaa8\ub450 \ud3ec\ud568"}, {"text": "Explore \ud0c0\uc785 \uc0ac\uc6a9", "passed": true, "evidence": "5\uba85 \ubaa8\ub450 Explore"}, {"text": "\ud0c0\uac9f \ud30c\uc77c \uba85\uc2dc", "passed": true, "evidence": "3\ud30c\uc77c \uac01\uac01 \uc804\ub2f4 analyst\uc5d0 \uba85\uc2dc"}, {"text": "SendMessage findings \uacf5\uc720", "passed": true, "evidence": "analysts\u2192integration-tracer\u2192lead \ud328\ud134"}, {"text": "\uacb0\uacfc \uc885\ud569 \uacfc\uc815", "passed": true, "evidence": "Task 6 synthesis + integration-tracer cross-reference"}]}, {"eval_id": 2, "eval_name": "debugging-order-processing-bug", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.17, "passed": 1, "failed": 5, "total": 6, "time_seconds": 86.4, "tokens": 12841, "tool_calls": 4, "errors": 0}, "expectations": [{"text": "TeamCreate \ud638\ucd9c", "passed": false, "evidence": "\ubbf8\uc0ac\uc6a9"}, {"text": "team_name + name \ud3ec\ud568", "passed": false, "evidence": "Agent \ubbf8\uc0ac\uc6a9"}, {"text": "Explore \ud0c0\uc785 \uc0ac\uc6a9", "passed": false, "evidence": "\uc9c1\uc811 Read/Grep"}, {"text": "\ud0c0\uac9f \ud30c\uc77c \uba85\uc2dc", "passed": false, "evidence": "teammate prompt \uc5c6\uc74c"}, {"text": "SendMessage findings \uacf5\uc720", "passed": false, "evidence": "\ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8"}, {"text": "\uacb0\uacfc \uc885\ud569 \uacfc\uc815", "passed": true, "evidence": "\ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8 \ub0b4 \uc790\uc5f0 \uc885\ud569"}]}, {"eval_id": 3, "eval_name": "code-review-with-codex-xv", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 137.8, "tokens": 28022, "tool_calls": 5, "errors": 0}, "expectations": [{"text": "TeamCreate \ud638\ucd9c", "passed": true, "evidence": "team_name=\"pr-review\""}, {"text": "\ub2e4\uad00\uc810 reviewer 2+ \uc874\uc7ac", "passed": true, "evidence": "3\uac1c: security, perf, correctness"}, {"text": "xv-codex \uc804\ub2f4 teammate", "passed": true, "evidence": "xv-codex (general-purpose)"}, {"text": "Codex CLI \uba85\ub839\uc5b4 \ud3ec\ud568", "passed": true, "evidence": "3\uac1c codex exec \ubcd1\ub82c \ud638\ucd9c"}, {"text": "/tmp/xv/ \ud328\ud134 \uc0ac\uc6a9", "passed": true, "evidence": "7\uac1c \uc544\ud2f0\ud329\ud2b8 in /tmp/xv/pr-review/"}, {"text": "synthesizer \uc885\ud569", "passed": true, "evidence": "CRITICAL/HIGH/MEDIUM confidence scoring"}, {"text": "\ubaa8\ub4e0 Agent\uc5d0 team_name", "passed": true, "evidence": "5\uac1c \ubaa8\ub450 team_name=\"pr-review\""}]}, {"eval_id": 3, "eval_name": "code-review-with-codex-xv", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.0, "passed": 0, "failed": 7, "total": 7, "time_seconds": 98.2, "tokens": 13242, "tool_calls": 5, "errors": 0}, "expectations": [{"text": "TeamCreate \ud638\ucd9c", "passed": false, "evidence": "\ubbf8\uc0ac\uc6a9"}, {"text": "\ub2e4\uad00\uc810 reviewer 2+ \uc874\uc7ac", "passed": false, "evidence": "\ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8 grep \uae30\ubc18 \uac80\uc0ac"}, {"text": "xv-codex \uc804\ub2f4 teammate", "passed": false, "evidence": "which codex + \uc9c1\uc811 Bash \ud638\ucd9c"}, {"text": "Codex CLI \uba85\ub839\uc5b4 \ud3ec\ud568", "passed": false, "evidence": "teammate prompt \uc5c6\uc74c, best-effort Bash"}, {"text": "/tmp/xv/ \ud328\ud134 \uc0ac\uc6a9", "passed": false, "evidence": "\uc544\ud2f0\ud329\ud2b8 \ud328\ud134 \ubbf8\uc0ac\uc6a9"}, {"text": "synthesizer \uc885\ud569", "passed": false, "evidence": "Phase 6\uc5d0\uc11c \ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8 \uc885\ud569"}, {"text": "\ubaa8\ub4e0 Agent\uc5d0 team_name", "passed": false, "evidence": "Agent \ubbf8\uc0ac\uc6a9"}]}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 136.4, "stddev": 2.6, "min": 132.7, "max": 138.7}, "tokens": {"mean": 22669, "stddev": 3893, "min": 19258, "max": 28022}}, "without_skill": {"pass_rate": {"mean": 0.06, "stddev": 0.08, "min": 0.0, "max": 0.17}, "time_seconds": {"mean": 101.1, "stddev": 13.6, "min": 86.4, "max": 118.8}, "tokens": {"mean": 14181, "stddev": 1593, "min": 12841, "max": 16459}}, "delta": {"pass_rate": "+0.94", "time_seconds": "+35.3", "tokens": "+8488"}}, "notes": ["with_skill \uc740 3\uac1c eval \ubaa8\ub450\uc5d0\uc11c 100% pass rate \ub2ec\uc131 \u2014 \uc2a4\ud0ac\uc774 \ud300 \uc870\uc9c1 \ud328\ud134\uc744 \ud655\uc2e4\ud788 \uac00\uc774\ub4dc\ud568", "without_skill\uc740 Agent \ub3c4\uad6c \uc790\uccb4\ub97c \uc0ac\uc6a9\ud558\uc9c0 \uc54a\uc74c \u2014 \ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8\uac00 \uc9c1\uc811 \uc791\uc5c5\ud558\ub294 \ud328\ud134\uc73c\ub85c fallback", "with_skill\uc740 \ud3c9\uade0 +35\ucd08, +8.5K \ud1a0\ud070 \ucd94\uac00 \uc18c\ube44 \u2014 \ud300 \uc870\uc9c1 \uacc4\ud68d\uc758 \ubcf5\uc7a1\uc131 \ubc18\uc601", "Eval 2 without_skill\uc5d0\uc11c '\uacb0\uacfc \uc885\ud569' assertion\ub9cc pass \u2014 \ub2e8\uc77c \uc5d0\uc774\uc804\ud2b8 \ub0b4 \uc790\uc5f0 \uc885\ud569\uc740 \uac00\ub2a5\ud558\ubbc0\ub85c \ube44\ucc28\ubcc4\uc801 assertion\uc77c \uc218 \uc788\uc74c", "without_skill\uc5d0\uc11c\ub3c4 Codex CLI\ub97c 'which codex'\ub85c \ud655\uc778 \ud6c4 \uc0ac\uc6a9 \uc2dc\ub3c4 \u2014 \ub2e4\ub9cc \uad6c\uc870\ud654\ub41c artifact \ud328\ud134 \uc5c6\uc774 \ub2e8\uc21c Bash \ud638\ucd9c", "with_skill\uc758 \ud1a0\ud070 \ubd84\uc0b0\uc774 \ud07c (19K-28K) \u2014 Eval 3\uc758 cross-verification \ud328\ud134\uc774 \ud2b9\ud788 \ud1a0\ud070 \uc18c\ube44\uac00 \ub9ce\uc74c"]}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

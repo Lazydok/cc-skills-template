@@ -1,0 +1,49 @@
+{
+  "skill_name": "agent-teams",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "프로젝트의 src/api/와 src/services/ 디렉토리에 새로운 사용자 인증 API를 추가해줘. JWT 토큰 기반으로 login, register, refresh 엔드포인트 3개 만들고, 각각에 대한 유닛 테스트도 작성해줘. TypeScript로 작성하고 Express 프레임워크 사용.",
+      "expected_output": "TeamCreate로 팀을 생성하고, 최소 3명 이상의 teammate를 Agent(team_name=..., name=...) 형태로 스폰. API 개발, 서비스 로직, 테스트를 분리된 teammate가 담당. 파일 소유권이 분리되어야 함.",
+      "files": [],
+      "expectations": [
+        "TeamCreate가 먼저 호출되어 팀이 생성됨",
+        "모든 Agent 호출에 team_name 파라미터가 포함됨",
+        "모든 Agent 호출에 name 파라미터가 포함됨",
+        "최소 3명의 teammate가 스폰됨 (API, service, test 분리)",
+        "각 teammate의 prompt에 구체적인 파일 경로와 작업 내용이 포함됨",
+        "테스트 전담 teammate가 존재함",
+        "teammate 간 파일 소유권이 겹치지 않음"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "우리 앱에서 주문 처리 로직에 버그가 있어. 사용자가 주문하면 가끔 금액이 잘못 계산돼. src/services/order_processor.py, src/models/order.py, src/api/handlers/orders.py 이 세 파일을 조사해서 원인을 찾아줘.",
+      "expected_output": "디버깅 팀을 구성하여 각 파일/모듈을 병렬로 조사. Explore 타입 teammate를 활용하여 읽기 전용 조사 수행. 가설별로 teammate를 분배하고 결과를 공유.",
+      "files": [],
+      "expectations": [
+        "TeamCreate가 호출됨",
+        "모든 Agent 호출에 team_name과 name이 포함됨",
+        "Explore subagent_type을 사용하는 teammate가 최소 1명 존재",
+        "조사 대상 파일(order_processor.py, order.py, orders.py)이 teammate prompt에 명시됨",
+        "teammate 간 SendMessage를 통한 findings 공유가 설계에 포함됨",
+        "최종 결과를 종합하는 과정이 포함됨"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "이 PR의 코드를 리뷰해줘. 보안, 성능, 정확성 관점에서 종합적으로 검토하고, Codex로도 크로스 검증해줘. 변경 파일: src/auth/middleware.py, src/api/routes.py, tests/test_auth.py",
+      "expected_output": "코드 리뷰 팀을 구성하여 보안/성능/정확성 각 관점별 reviewer + Codex cross-verification teammate + synthesizer. /tmp/xv/ 아티팩트 패턴 사용.",
+      "files": [],
+      "expectations": [
+        "TeamCreate가 호출됨",
+        "보안, 성능, 정확성 중 최소 2개 관점의 전담 reviewer teammate가 존재",
+        "xv-codex 또는 cross-verification 전담 teammate가 존재",
+        "Codex CLI 호출이 teammate prompt에 포함됨",
+        "/tmp/xv/ 아티팩트 디렉토리 패턴이 사용됨",
+        "synthesizer 역할의 teammate가 결과를 종합",
+        "모든 Agent에 team_name이 포함됨"
+      ]
+    }
+  ]
+}

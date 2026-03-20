@@ -1,0 +1,49 @@
+{
+  "eval_id": 3,
+  "eval_name": "code-review-with-codex-cross-verification",
+  "prompt": "이 PR의 코드를 리뷰해줘. 보안, 성능, 정확성 관점에서 종합적으로 검토하고, Codex로도 크로스 검증해줘. 변경 파일: src/auth/middleware.py, src/api/routes.py, tests/test_auth.py",
+  "assertions": [
+    {
+      "id": "a3-team-create",
+      "text": "TeamCreate가 호출됨",
+      "type": "structural",
+      "check": "execution_plan에 TeamCreate 호출 존재"
+    },
+    {
+      "id": "a3-multi-perspective",
+      "text": "보안, 성능, 정확성 중 최소 2개 관점의 전담 reviewer teammate가 존재",
+      "type": "quantitative",
+      "check": "security/performance/correctness 중 2개 이상의 전담 Agent 스폰"
+    },
+    {
+      "id": "a3-xv-codex",
+      "text": "xv-codex 또는 cross-verification 전담 teammate가 존재",
+      "type": "structural",
+      "check": "codex 관련 cross-verification 전담 Agent 스폰 존재"
+    },
+    {
+      "id": "a3-codex-cli",
+      "text": "Codex CLI 호출이 teammate prompt에 포함됨",
+      "type": "quality",
+      "check": "codex exec 명령어가 teammate prompt에 포함"
+    },
+    {
+      "id": "a3-artifact-dir",
+      "text": "/tmp/xv/ 아티팩트 디렉토리 패턴이 사용됨",
+      "type": "structural",
+      "check": "/tmp/xv/ 경로가 계획에 포함"
+    },
+    {
+      "id": "a3-synthesizer",
+      "text": "synthesizer 역할의 teammate가 결과를 종합",
+      "type": "structural",
+      "check": "synthesizer 또는 종합 역할 Agent 존재"
+    },
+    {
+      "id": "a3-all-team-name",
+      "text": "모든 Agent에 team_name이 포함됨",
+      "type": "structural",
+      "check": "모든 Agent() 호출에 team_name 파라미터 존재"
+    }
+  ]
+}

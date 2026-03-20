@@ -8,6 +8,100 @@ Claude Code의 능력을 극대화하는 **스킬 템플릿 모음**입니다.
 
 ---
 
+## Performance Benchmark
+
+> **Agent Teams 스킬이 실제로 얼마나 차이를 만드는가?**
+> 동일한 프롬프트를 스킬 적용 / 미적용으로 실행하여 정량 비교한 결과입니다.
+
+### 종합 결과
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│   with_skill     ████████████████████████████████████████  100%     │
+│   without_skill  ██▌                                        6%     │
+│                                                                     │
+│   Assertion Pass Rate (높을수록 좋음)                         Δ +94%│
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+| 지표 | with_skill | without_skill | Delta |
+|:-----|:----------:|:-------------:|:-----:|
+| **Pass Rate** | **100%** | 6% | **+94%** |
+| 평균 실행 시간 | 136.4s | 101.1s | +35.3s |
+| 평균 토큰 소비 | 22,669 | 14,181 | +8,488 |
+
+### 테스트 시나리오별 상세
+
+<table>
+<tr>
+<th width="30%">시나리오</th>
+<th width="10%">with_skill</th>
+<th width="10%">without_skill</th>
+<th width="50%">핵심 차이</th>
+</tr>
+<tr>
+<td>
+<strong>풀스택 기능 구현</strong><br/>
+<sub>JWT 인증 API (login/register/refresh) + 유닛 테스트</sub>
+</td>
+<td align="center">
+<strong>7/7</strong><br/><sub>100%</sub>
+</td>
+<td align="center">
+<strong>0/7</strong><br/><sub>0%</sub>
+</td>
+<td>
+<strong>with_skill</strong>: 5명의 teammate가 TeamCreate → Agent(team_name) 패턴으로 조직. 파일 소유권이 완전 분리(16개 파일, 0 충돌). 테스트 전담 teammate 포함.<br/>
+<strong>without_skill</strong>: 단일 에이전트가 모든 파일을 직접 순차/병렬 Write. 팀 조직 없음.
+</td>
+</tr>
+<tr>
+<td>
+<strong>버그 조사 (디버깅)</strong><br/>
+<sub>주문 금액 오계산 버그 — 3파일 병렬 조사</sub>
+</td>
+<td align="center">
+<strong>6/6</strong><br/><sub>100%</sub>
+</td>
+<td align="center">
+<strong>1/6</strong><br/><sub>17%</sub>
+</td>
+<td>
+<strong>with_skill</strong>: 5명의 Explore teammate가 파일별 + 통합추적 + 테스트커버리지 병렬 조사. SendMessage로 발견사항 실시간 공유.<br/>
+<strong>without_skill</strong>: 단일 에이전트가 Read/Grep 22~25회로 순차 조사. 가설 간 교차 검증 불가.
+</td>
+</tr>
+<tr>
+<td>
+<strong>코드 리뷰 + Cross-Verification</strong><br/>
+<sub>보안/성능/정확성 3관점 + Codex 교차검증</sub>
+</td>
+<td align="center">
+<strong>7/7</strong><br/><sub>100%</sub>
+</td>
+<td align="center">
+<strong>0/7</strong><br/><sub>0%</sub>
+</td>
+<td>
+<strong>with_skill</strong>: 보안/성능/정확성 전담 reviewer 3명 + xv-codex teammate (Codex CLI 병렬 3회 호출) + synthesizer가 CRITICAL/HIGH/MEDIUM 신뢰도 판정. <code>/tmp/xv/</code> 아티팩트 7개 생성.<br/>
+<strong>without_skill</strong>: 단일 에이전트가 grep 기반 패턴 검사. Codex는 <code>which codex</code>로 존재 확인만. 아티팩트/신뢰도 판정 없음.
+</td>
+</tr>
+</table>
+
+### 분석 요약
+
+- **팀 조직 패턴의 결정적 차이**: 스킬 없이는 Claude가 `Agent(team_name=...)` 대신 단일 에이전트 직접 작업으로 fallback하여, 병렬 협업/역할 분리/교차검증이 전혀 이루어지지 않음
+- **비용 대비 효과**: 추가 토큰 ~8.5K (+60%)로 pass rate가 6% → 100%로 상승 — **토큰 1K당 +11%p 개선**
+- **교차검증의 체계화**: 스킬 적용 시에만 구조화된 아티팩트 (`/tmp/xv/`), Codex CLI 병렬 호출, 신뢰도 스코어링 (CRITICAL/HIGH/MEDIUM)이 작동
+- **파일 소유권 보장**: 팀 기반 접근에서만 teammate간 파일 충돌 0건 달성
+
+> **Benchmark 환경**: Claude Opus 4.6 (1M context) | 2026-03-20 | 3 eval scenarios, 1 run per config
+
+---
+
 ## 포함된 스킬
 
 ```

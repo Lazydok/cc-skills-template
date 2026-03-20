@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "TeamCreate가 호출됨",
+      "passed": true,
+      "evidence": "Phase 1에서 TeamCreate(team_name=\"pr-review\", ...) 호출"
+    },
+    {
+      "text": "보안, 성능, 정확성 중 최소 2개 관점의 전담 reviewer teammate가 존재",
+      "passed": true,
+      "evidence": "3개 관점 모두 전담: security-reviewer, perf-reviewer, correctness-reviewer"
+    },
+    {
+      "text": "xv-codex 또는 cross-verification 전담 teammate가 존재",
+      "passed": true,
+      "evidence": "xv-codex teammate (general-purpose)가 Codex CLI 전담"
+    },
+    {
+      "text": "Codex CLI 호출이 teammate prompt에 포함됨",
+      "passed": true,
+      "evidence": "xv-codex prompt에 3개의 'codex exec --ephemeral --full-auto -s read-only -o /tmp/xv/pr-review/codex_review_*.md' 명령어 포함, 병렬 실행(&+wait) 패턴 사용"
+    },
+    {
+      "text": "/tmp/xv/ 아티팩트 디렉토리 패턴이 사용됨",
+      "passed": true,
+      "evidence": "/tmp/xv/pr-review/ 디렉토리에 7개 아티팩트 파일 매핑 (3 Claude + 3 Codex + 1 synthesis)"
+    },
+    {
+      "text": "synthesizer 역할의 teammate가 결과를 종합",
+      "passed": true,
+      "evidence": "synthesizer teammate가 6개 리뷰 아티팩트를 읽고 confidence scoring (CRITICAL/HIGH/MEDIUM)으로 종합 보고서 작성"
+    },
+    {
+      "text": "모든 Agent에 team_name이 포함됨",
+      "passed": true,
+      "evidence": "5개 Agent 호출 모두 team_name=\"pr-review\" 포함 확인"
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}

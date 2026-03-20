@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "TeamCreate가 호출됨",
+      "passed": false,
+      "evidence": "TeamCreate 미사용. 6개 Phase의 직접 도구 호출로 구성"
+    },
+    {
+      "text": "보안, 성능, 정확성 중 최소 2개 관점의 전담 reviewer teammate가 존재",
+      "passed": false,
+      "evidence": "전담 reviewer teammate 없음. 단일 에이전트가 Phase 2(Security), Phase 3(Performance), Phase 4(Correctness)를 순차 실행. 각 관점은 grep 패턴으로만 검사"
+    },
+    {
+      "text": "xv-codex 또는 cross-verification 전담 teammate가 존재",
+      "passed": false,
+      "evidence": "전담 teammate 없음. Phase 5에서 'which codex' 확인 후 가능하면 직접 호출하는 방식"
+    },
+    {
+      "text": "Codex CLI 호출이 teammate prompt에 포함됨",
+      "passed": false,
+      "evidence": "teammate prompt 자체가 없음. Codex는 Phase 5에서 Bash로 직접 호출 시도하나 'Option B: Codex CLI not available' 대안도 제시"
+    },
+    {
+      "text": "/tmp/xv/ 아티팩트 디렉토리 패턴이 사용됨",
+      "passed": false,
+      "evidence": "/tmp/xv/ 패턴 미사용. 아티팩트 파일 개념 자체가 적용되지 않음"
+    },
+    {
+      "text": "synthesizer 역할의 teammate가 결과를 종합",
+      "passed": false,
+      "evidence": "synthesizer teammate 없음. Phase 6에서 단일 에이전트가 'No tool calls needed — this is a synthesis step' 으로 종합"
+    },
+    {
+      "text": "모든 Agent에 team_name이 포함됨",
+      "passed": false,
+      "evidence": "Agent 도구 자체가 미사용. 'there is no Agent tool or subagent dispatch mechanism available' 명시"
+    }
+  ],
+  "summary": {
+    "passed": 0,
+    "failed": 7,
+    "total": 7,
+    "pass_rate": 0.0
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "eval_id": 2,
+  "eval_name": "debugging-order-processing-bug",
+  "prompt": "우리 앱에서 주문 처리 로직에 버그가 있어. 사용자가 주문하면 가끔 금액이 잘못 계산돼. src/services/order_processor.py, src/models/order.py, src/api/handlers/orders.py 이 세 파일을 조사해서 원인을 찾아줘.",
+  "assertions": [
+    {
+      "id": "a2-team-create",
+      "text": "TeamCreate가 호출됨",
+      "type": "structural",
+      "check": "execution_plan에 TeamCreate 호출 존재"
+    },
+    {
+      "id": "a2-team-params",
+      "text": "모든 Agent 호출에 team_name과 name이 포함됨",
+      "type": "structural",
+      "check": "모든 Agent() 호출에 team_name, name 파라미터 존재"
+    },
+    {
+      "id": "a2-explore-type",
+      "text": "Explore subagent_type을 사용하는 teammate가 최소 1명 존재",
+      "type": "structural",
+      "check": "subagent_type='Explore' 사용하는 Agent 호출 존재"
+    },
+    {
+      "id": "a2-target-files",
+      "text": "조사 대상 파일(order_processor.py, order.py, orders.py)이 teammate prompt에 명시됨",
+      "type": "quality",
+      "check": "세 파일명이 각각 최소 하나의 teammate prompt에 포함"
+    },
+    {
+      "id": "a2-findings-sharing",
+      "text": "teammate 간 SendMessage를 통한 findings 공유가 설계에 포함됨",
+      "type": "structural",
+      "check": "SendMessage 패턴이 계획에 언급됨"
+    },
+    {
+      "id": "a2-synthesis",
+      "text": "최종 결과를 종합하는 과정이 포함됨",
+      "type": "quality",
+      "check": "findings를 종합하는 단계 또는 역할이 존재"
+    }
+  ]
+}

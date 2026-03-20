@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "TeamCreate가 먼저 호출되어 팀이 생성됨",
+      "passed": true,
+      "evidence": "Step 1에서 TeamCreate(team_name=\"auth-feature\", ...) 호출이 모든 Agent 호출보다 앞에 위치"
+    },
+    {
+      "text": "모든 Agent 호출에 team_name 파라미터가 포함됨",
+      "passed": true,
+      "evidence": "5개 Agent 호출 모두 team_name=\"auth-feature\" 포함 확인"
+    },
+    {
+      "text": "모든 Agent 호출에 name 파라미터가 포함됨",
+      "passed": true,
+      "evidence": "auth-config, auth-models, auth-service, auth-api, auth-tests 5개 모두 name 파라미터 포함"
+    },
+    {
+      "text": "최소 3명의 teammate가 스폰됨 (API, service, test 분리)",
+      "passed": true,
+      "evidence": "5명 스폰: auth-config, auth-models, auth-service, auth-api, auth-tests"
+    },
+    {
+      "text": "각 teammate의 prompt에 구체적인 파일 경로와 작업 내용이 포함됨",
+      "passed": true,
+      "evidence": "각 prompt에 src/api/auth.controller.ts, src/services/auth.service.ts 등 구체적 파일 경로 및 상세 구현 사항 포함"
+    },
+    {
+      "text": "테스트 전담 teammate가 존재함",
+      "passed": true,
+      "evidence": "auth-tests teammate가 tests/ 디렉토리 전담, 3개 테스트 파일 담당"
+    },
+    {
+      "text": "teammate 간 파일 소유권이 겹치지 않음",
+      "passed": true,
+      "evidence": "File Ownership Matrix에서 16개 파일이 각각 하나의 owner만 가짐. 'No file is owned by more than one teammate' 명시"
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}

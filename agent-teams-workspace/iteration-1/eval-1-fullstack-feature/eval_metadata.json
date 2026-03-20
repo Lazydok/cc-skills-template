@@ -1,0 +1,49 @@
+{
+  "eval_id": 1,
+  "eval_name": "fullstack-feature-auth-api",
+  "prompt": "프로젝트의 src/api/와 src/services/ 디렉토리에 새로운 사용자 인증 API를 추가해줘. JWT 토큰 기반으로 login, register, refresh 엔드포인트 3개 만들고, 각각에 대한 유닛 테스트도 작성해줘. TypeScript로 작성하고 Express 프레임워크 사용.",
+  "assertions": [
+    {
+      "id": "a1-team-create",
+      "text": "TeamCreate가 먼저 호출되어 팀이 생성됨",
+      "type": "structural",
+      "check": "execution_plan에 TeamCreate 호출이 Agent 호출보다 앞에 위치"
+    },
+    {
+      "id": "a1-team-name",
+      "text": "모든 Agent 호출에 team_name 파라미터가 포함됨",
+      "type": "structural",
+      "check": "모든 Agent() 호출에서 team_name=... 파라미터 존재 확인"
+    },
+    {
+      "id": "a1-agent-name",
+      "text": "모든 Agent 호출에 name 파라미터가 포함됨",
+      "type": "structural",
+      "check": "모든 Agent() 호출에서 name=... 파라미터 존재 확인"
+    },
+    {
+      "id": "a1-min-teammates",
+      "text": "최소 3명의 teammate가 스폰됨 (API, service, test 분리)",
+      "type": "quantitative",
+      "check": "Agent(team_name=...) 호출 횟수 >= 3"
+    },
+    {
+      "id": "a1-specific-prompts",
+      "text": "각 teammate의 prompt에 구체적인 파일 경로와 작업 내용이 포함됨",
+      "type": "quality",
+      "check": "각 Agent의 prompt에 src/api/ 또는 src/services/ 등 경로 포함"
+    },
+    {
+      "id": "a1-test-teammate",
+      "text": "테스트 전담 teammate가 존재함",
+      "type": "structural",
+      "check": "test 관련 name을 가진 Agent 스폰 존재"
+    },
+    {
+      "id": "a1-file-ownership",
+      "text": "teammate 간 파일 소유권이 겹치지 않음",
+      "type": "quality",
+      "check": "각 teammate가 담당하는 디렉토리/파일이 겹치지 않음"
+    }
+  ]
+}

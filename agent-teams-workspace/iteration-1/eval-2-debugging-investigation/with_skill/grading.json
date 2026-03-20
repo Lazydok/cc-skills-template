@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "TeamCreate가 호출됨",
+      "passed": true,
+      "evidence": "Step 1에서 TeamCreate(team_name=\"order-bug-investigation\", ...) 호출"
+    },
+    {
+      "text": "모든 Agent 호출에 team_name과 name이 포함됨",
+      "passed": true,
+      "evidence": "5개 Agent 모두 team_name=\"order-bug-investigation\" 및 고유 name 포함"
+    },
+    {
+      "text": "Explore subagent_type을 사용하는 teammate가 최소 1명 존재",
+      "passed": true,
+      "evidence": "5명 모두 subagent_type=\"Explore\" 사용 — 읽기 전용 조사에 적합"
+    },
+    {
+      "text": "조사 대상 파일(order_processor.py, order.py, orders.py)이 teammate prompt에 명시됨",
+      "passed": true,
+      "evidence": "order-processor-analyst: order_processor.py, order-model-analyst: order.py, api-handler-analyst: orders.py 각각 명시"
+    },
+    {
+      "text": "teammate 간 SendMessage를 통한 findings 공유가 설계에 포함됨",
+      "passed": true,
+      "evidence": "Step 7에 구체적 SendMessage 패턴 문서화: analysts→integration-tracer→lead 흐름"
+    },
+    {
+      "text": "최종 결과를 종합하는 과정이 포함됨",
+      "passed": true,
+      "evidence": "Task 6 'Synthesize findings and identify root cause' + integration-tracer 역할이 cross-reference 수행"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}
