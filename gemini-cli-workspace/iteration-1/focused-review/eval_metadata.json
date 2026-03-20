@@ -1,0 +1,42 @@
+{
+  "eval_id": 3,
+  "eval_name": "focused-review",
+  "prompt": "이 파이썬 코드 gemini한테도 second opinion 받고 싶어. 특히 SQL injection 이슈랑 캐시 문제 집중적으로 봐달라고 해줘",
+  "assertions": [
+    {
+      "id": "gemini-invoked",
+      "text": "gemini CLI가 실제로 실행되었음",
+      "type": "required"
+    },
+    {
+      "id": "used-headless-flags",
+      "text": "-p 플래그와 -o 플래그를 사용함",
+      "type": "required"
+    },
+    {
+      "id": "code-passed-to-gemini",
+      "text": "test_sample.py 코드가 stdin 또는 프롬프트에 포함되어 전달됨",
+      "type": "required"
+    },
+    {
+      "id": "focused-prompt",
+      "text": "프롬프트에 SQL injection과 캐시 이슈에 집중하라는 지시가 포함됨",
+      "type": "required"
+    },
+    {
+      "id": "sql-injection-found",
+      "text": "리뷰 결과에서 SQL injection 취약점을 식별함",
+      "type": "required"
+    },
+    {
+      "id": "cache-issue-found",
+      "text": "리뷰 결과에서 캐시 관련 이슈(eviction 없음 등)를 식별함",
+      "type": "recommended"
+    },
+    {
+      "id": "result-saved",
+      "text": "리뷰 결과가 파일로 저장됨",
+      "type": "required"
+    }
+  ]
+}

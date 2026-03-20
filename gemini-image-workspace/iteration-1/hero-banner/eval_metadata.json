@@ -1,0 +1,11 @@
+{
+  "eval_id": 2,
+  "eval_name": "hero-banner",
+  "prompt": "랜딩 페이지 상단에 넣을 히어로 배너 이미지가 필요해. 다크 테마에 보라색-파란색 그라데이션 배경, 가로로 넓은 비율로 만들어줘. 고해상도로 부탁해. assets/hero-banner.png에 저장",
+  "assertions": [
+    {"name": "image-file-created", "check": "output directory contains at least one image file"},
+    {"name": "aspect-ratio-set", "check": "command included --aspect 16:9 flag"},
+    {"name": "high-res-set", "check": "command included --size 2K flag"},
+    {"name": "correct-output-path", "check": "image was saved to the specified outputs directory"}
+  ]
+}

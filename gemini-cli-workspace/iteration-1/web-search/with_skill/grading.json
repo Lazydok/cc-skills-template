@@ -1,0 +1,37 @@
+{
+  "eval_id": 2,
+  "eval_name": "web-search",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "gemini CLI가 실제로 실행되었음",
+      "passed": true,
+      "evidence": "gemini CLI 두 번 실행 (1차 timeout, 2차 성공)"
+    },
+    {
+      "text": "프롬프트에 웹 검색 의도가 포함됨",
+      "passed": true,
+      "evidence": "Search the web for 'Node.js 22 LTS ...' 포함"
+    },
+    {
+      "text": "-p 플래그와 -o 플래그를 사용함",
+      "passed": true,
+      "evidence": "-p ... -o text 사용"
+    },
+    {
+      "text": "-y 플래그를 사용하여 google_web_search 도구 자동 승인",
+      "passed": true,
+      "evidence": "-y 플래그로 google_web_search 자동 승인"
+    },
+    {
+      "text": "출력에 Node.js 22 관련 정보가 포함됨",
+      "passed": true,
+      "evidence": "V8 12.4, Maglev compiler, native WebSocket, node --run, ESM require() 등 포함"
+    },
+    {
+      "text": "검색 결과가 파일로 저장됨",
+      "passed": true,
+      "evidence": "nodejs22-lts-changes.md (19 lines) 저장"
+    }
+  ]
+}

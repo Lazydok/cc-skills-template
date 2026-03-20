@@ -1,0 +1,108 @@
+{
+  "metadata": {
+    "skill_name": "codex-cli",
+    "skill_path": "/home/lazydok/src/cc-skills-template/.claude/skills/codex-cli",
+    "executor_model": "claude-opus-4-6",
+    "timestamp": "2026-03-20T00:00:00Z",
+    "evals_run": [1, 2, 3],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1, "eval_name": "basic-code-review", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 50.0, "tokens": 15012, "tool_calls": 5, "errors": 0},
+      "expectations": [
+        {"text": "codex exec 사용", "passed": true, "evidence": "exec 모드 사용"},
+        {"text": "--ephemeral 포함", "passed": true, "evidence": "포함"},
+        {"text": "-s read-only 사용", "passed": true, "evidence": "사용"},
+        {"text": "-o 파일 저장", "passed": true, "evidence": "-o /tmp/codex_calculator_review.md"},
+        {"text": "heredoc/cat 패턴", "passed": true, "evidence": "<<'EOF' + $(cat)"},
+        {"text": "timeout 래핑", "passed": true, "evidence": "timeout 120"}
+      ]
+    },
+    {
+      "eval_id": 1, "eval_name": "basic-code-review", "configuration": "without_skill", "run_number": 1,
+      "result": {"pass_rate": 0.0, "passed": 0, "failed": 6, "total": 6, "time_seconds": 36.8, "tokens": 9959, "tool_calls": 3, "errors": 0},
+      "expectations": [
+        {"text": "codex exec 사용", "passed": false, "evidence": "interactive codex --approval-mode 사용"},
+        {"text": "--ephemeral 포함", "passed": false, "evidence": "미사용"},
+        {"text": "-s read-only 사용", "passed": false, "evidence": "미사용"},
+        {"text": "-o 파일 저장", "passed": false, "evidence": "미사용"},
+        {"text": "heredoc/cat 패턴", "passed": false, "evidence": "stdin 무시 문제 있는 pipe 패턴"},
+        {"text": "timeout 래핑", "passed": false, "evidence": "미사용"}
+      ]
+    },
+    {
+      "eval_id": 2, "eval_name": "security-audit-xv", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 60.2, "tokens": 16554, "tool_calls": 4, "errors": 0},
+      "expectations": [
+        {"text": "/tmp/xv/ 디렉토리 생성", "passed": true, "evidence": "mkdir -p"},
+        {"text": "codex exec 사용", "passed": true, "evidence": "모든 호출에서 exec"},
+        {"text": "read-only 샌드박스", "passed": true, "evidence": "-s read-only"},
+        {"text": "/tmp/xv/ 아티팩트 저장", "passed": true, "evidence": "-o /tmp/xv/security-audit/"},
+        {"text": "보안 검사 항목", "passed": true, "evidence": "8개 카테고리"},
+        {"text": "표준 아티팩트 포맷", "passed": true, "evidence": "Status/Findings/Verdict"},
+        {"text": "timeout 래핑", "passed": true, "evidence": "timeout 120"}
+      ]
+    },
+    {
+      "eval_id": 2, "eval_name": "security-audit-xv", "configuration": "without_skill", "run_number": 1,
+      "result": {"pass_rate": 0.71, "passed": 5, "failed": 2, "total": 7, "time_seconds": 91.5, "tokens": 14678, "tool_calls": 12, "errors": 0},
+      "expectations": [
+        {"text": "/tmp/xv/ 디렉토리 생성", "passed": true, "evidence": "mkdir -p"},
+        {"text": "codex exec 사용", "passed": true, "evidence": "codex exec 사용"},
+        {"text": "read-only 샌드박스", "passed": true, "evidence": "-s read-only"},
+        {"text": "/tmp/xv/ 아티팩트 저장", "passed": true, "evidence": "-o 경로 지정"},
+        {"text": "보안 검사 항목", "passed": true, "evidence": "OWASP Top 10 등"},
+        {"text": "표준 아티팩트 포맷", "passed": false, "evidence": "커스텀 포맷"},
+        {"text": "timeout 래핑", "passed": false, "evidence": "미사용"}
+      ]
+    },
+    {
+      "eval_id": 3, "eval_name": "unavailable-fallback", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 59.0, "tokens": 14459, "tool_calls": 3, "errors": 0},
+      "expectations": [
+        {"text": "가용성 체크", "passed": true, "evidence": "command -v codex"},
+        {"text": "설치 안내", "passed": true, "evidence": "npm install -g @openai/codex"},
+        {"text": "조건 분기", "passed": true, "evidence": "if/else"},
+        {"text": "검증 명령어", "passed": true, "evidence": "codex exec + --output-schema"},
+        {"text": "fallback 전략", "passed": true, "evidence": "placeholder + Claude + 정적 분석기"}
+      ]
+    },
+    {
+      "eval_id": 3, "eval_name": "unavailable-fallback", "configuration": "without_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 79.2, "tokens": 19738, "tool_calls": 14, "errors": 0},
+      "expectations": [
+        {"text": "가용성 체크", "passed": true, "evidence": "command -v codex"},
+        {"text": "설치 안내", "passed": true, "evidence": "npm install -g @openai/codex"},
+        {"text": "조건 분기", "passed": true, "evidence": "if/else"},
+        {"text": "검증 명령어", "passed": true, "evidence": "codex exec --ephemeral -s read-only"},
+        {"text": "fallback 전략", "passed": true, "evidence": "placeholder + Claude 분석 (스킬 파일 탐색으로 학습)"}
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0},
+      "time_seconds": {"mean": 56.4, "stddev": 4.5, "min": 50.0, "max": 60.2},
+      "tokens": {"mean": 15342, "stddev": 857, "min": 14459, "max": 16554}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 0.57, "stddev": 0.42, "min": 0.0, "max": 1.0},
+      "time_seconds": {"mean": 69.2, "stddev": 23.0, "min": 36.8, "max": 91.5},
+      "tokens": {"mean": 14792, "stddev": 3991, "min": 9959, "max": 19738}
+    },
+    "delta": {
+      "pass_rate": "+0.43",
+      "time_seconds": "-12.8",
+      "tokens": "+550"
+    }
+  },
+  "notes": [
+    "Eval 1에서 스킬 효과가 가장 극명: with_skill 100% vs without_skill 0% — 스킬 없이는 존재하지 않는 플래그(--approval-mode) 사용",
+    "Eval 2 without_skill도 codex exec는 올바르게 사용했으나 표준 아티팩트 포맷과 timeout을 놓침",
+    "Eval 3 without_skill이 100% pass한 것은 에이전트가 프로젝트 내 스킬 파일을 직접 탐색하여 읽었기 때문 — 실제 스킬 미로드 환경에서는 다를 수 있음",
+    "with_skill이 평균 12.8초 더 빠름 — 스킬이 올바른 패턴을 즉시 제공하여 탐색 시간 절약",
+    "토큰 사용량은 거의 동일 (~550 토큰 차이) — 스킬 로딩의 오버헤드가 매우 작음"
+  ]
+}

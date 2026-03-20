@@ -1,0 +1,42 @@
+{
+  "eval_id": 2,
+  "eval_name": "security-audit-cross-verification",
+  "prompt": "이 PR에서 변경된 src/auth/ 디렉토리 전체를 보안 관점에서 Codex로 독립적으로 검증해줘. cross-verification 아티팩트를 /tmp/xv/에 남겨줘.",
+  "assertions": [
+    {
+      "id": "c2-artifact-dir",
+      "text": "/tmp/xv/ 아티팩트 디렉토리를 mkdir -p로 생성함",
+      "type": "structural"
+    },
+    {
+      "id": "c2-codex-exec",
+      "text": "codex exec 명령어가 사용됨",
+      "type": "structural"
+    },
+    {
+      "id": "c2-read-only-sandbox",
+      "text": "-s read-only 또는 적절한 샌드박스 모드가 사용됨",
+      "type": "structural"
+    },
+    {
+      "id": "c2-output-to-artifact",
+      "text": "-o 플래그로 /tmp/xv/ 경로에 아티팩트 저장",
+      "type": "structural"
+    },
+    {
+      "id": "c2-security-focus",
+      "text": "프롬프트에 보안 관련 검사 항목(injection, auth, secrets 등)이 포함됨",
+      "type": "quality"
+    },
+    {
+      "id": "c2-artifact-format",
+      "text": "아티팩트가 표준 포맷(Status, Findings, Verdict)을 따름",
+      "type": "quality"
+    },
+    {
+      "id": "c2-timeout",
+      "text": "timeout 래핑이 포함됨",
+      "type": "quality"
+    }
+  ]
+}

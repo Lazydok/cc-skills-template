@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "codex-cli", "runs": [{"id": "eval-1-basic-code-review-with_skill", "prompt": "src/utils/calculator.py \ud30c\uc77c\uc744 Codex\ub85c \ub9ac\ubdf0\ud574\uc918. \ub85c\uc9c1 \uc624\ub958\ub098 \uc5e3\uc9c0 \ucf00\uc774\uc2a4 \ubb38\uc81c\uac00 \uc788\ub294\uc9c0 \ud655\uc778\ud574\uc918.", "eval_id": 1, "outputs": [{"name": "execution_plan.md", "type": "text", "content": "# Execution Plan: Codex CLI Code Review\n\n## Task\n\"src/utils/calculator.py \ud30c\uc77c\uc744 Codex\ub85c \ub9ac\ubdf0\ud574\uc918. \ub85c\uc9c1 \uc624\ub958\ub098 \uc5e3\uc9c0 \ucf00\uc774\uc2a4 \ubb38\uc81c\uac00 \uc788\ub294\uc9c0 \ud655\uc778\ud574\uc918.\"\n\n## Skill Used\n`codex-cli` \u2014 Pattern 4 (Inline Code via Heredoc) + Pattern 7 (With Timeout)\n\n## Rationale for Pattern Selection\n\n- **Pattern 4 (Heredoc)**: The file content must be embedded directly in the prompt string because Codex ignores stdin when a prompt argument is given. The heredoc pattern with `$(cat file)` is the correct way to feed file content.\n- **Pattern 7 (Timeout)**: Wrapping with `timeout` is recommended for sub-agent use to prevent hangs on large files or complex prompts.\n- **`-s read-only`**: This is a review-only task; no file modifications needed. Safest sandbox mode.\n\n## Execution Steps\n\n### Step 1: Verify Codex CLI Availability\n\n```bash\nif ! command -v codex &>/dev/null; then\n  echo \"codex CLI not installed. Install: npm install -g @openai/codex\"\n  exit 1\nfi\n```\n\n### Step 2: Verify Target File Exists\n\n```bash\nif [ ! -f src/utils/calculator.py ]; then\n  echo \"ERROR: src/utils/calculator.py not found\"\n  exit 1\nfi\n```\n\n### Step 3: Invoke Codex CLI for Code Review\n\n```bash\ntimeout 120 codex exec --ephemeral -s read-only -o /tmp/codex_calculator_review.md \\\n  \"$(cat <<'EOF'\nReview this Python module for logic errors and edge case issues:\n\n$(cat src/utils/calculator.py)\n\nFocus on:\n1) Logic errors \u2014 incorrect calculations, wrong operator precedence, flawed conditionals\n2) Edge cases \u2014 division by zero, overflow/underflow, empty input, None/null handling\n3) Off-by-one errors\n4) Type handling \u2014 unexpected input types, missing type checks\n5) Boundary conditions \u2014 extreme values, negative numbers, floating point precision\n\nOutput as markdown with severity levels: [CRITICAL/HIGH/MEDIUM/LOW]\nFor each finding include: description, affected line/function, severity, and suggested fix.\nEOF\n)\" || echo \"# Codex Review \u2014 TIMEOUT\" > /tmp/codex_calculator_review.md\n```\n\n### Step 4: Read and Display Results\n\n```bash\ncat /tmp/codex_calculator_review.md\n```\n\n## Complete Single-Copy Script\n\n```bash\n#!/usr/bin/env bash\nset -euo pipefail\n\n# Step 1: Check codex availability\nif ! command -v codex &>/dev/null; then\n  echo \"CODEX_NOT_AVAILABLE: codex CLI not installed.\"\n  echo \"Install: npm install -g @openai/codex\"\n  exit 1\nfi\n\n# Step 2: Check target file\nTARGET=\"src/utils/calculator.py\"\nif [ ! -f \"$TARGET\" ]; then\n  echo \"ERROR: $TARGET not found\"\n  exit 1\nfi\n\n# Step 3: Run Codex review with timeout\nOUTPUT_FILE=\"/tmp/codex_calculator_review.md\"\n\ntimeout 120 codex exec --ephemeral -s read-only -o \"$OUTPUT_FILE\" \\\n  \"$(cat <<'EOF'\nReview this Python module for logic errors and edge case issues:\n\n$(cat src/utils/calculator.py)\n\nFocus on:\n1) Logic errors \u2014 incorrect calculations, wrong operator precedence, flawed conditionals\n2) Edge cases \u2014 division by zero, overflow/underflow, empty input, None/null handling\n3) Off-by-one errors\n4) Type handling \u2014 unexpected input types, missing type checks\n5) Boundary conditions \u2014 extreme values, negative numbers, floating point precision\n\nOutput as markdown with severity levels: [CRITICAL/HIGH/MEDIUM/LOW]\nFor each finding include: description, affected line/function, severity, and suggested fix.\nEOF\n)\" || echo \"# Codex Review \u2014 TIMEOUT\" > \"$OUTPUT_FILE\"\n\n# Step 4: Display results\necho \"=== Codex Review Results ===\"\ncat \"$OUTPUT_FILE\"\n```\n\n## Key Flags Explained\n\n| Flag | Purpose |\n|------|---------|\n| `timeout 120` | 120-second timeout to prevent hangs |\n| `--ephemeral` | No session persistence; clean execution |\n| `-s read-only` | Read-only sandbox \u2014 safest mode for review |\n| `-o /tmp/codex_calculator_review.md` | Write clean output to file |\n| Heredoc `<<'EOF'` | Single-quoted delimiter prevents premature shell expansion |\n| `$(cat src/utils/calculator.py)` | Embeds file content into prompt (required because stdin is ignored with a prompt argument) |\n\n## Expected Performance\n\n- **Estimated time**: ~5-15 seconds (single file analysis)\n- **Estimated input tokens**: ~10-45K (depending on file size + CLAUDE.md overhead)\n\n## Error Handling\n\n- If `codex` is not installed: exits with install instructions\n- If the target file is missing: exits with error message\n- If Codex hangs or takes >120s: the `timeout` command kills the process and writes a TIMEOUT marker to the output file\n- Codex exit code is 0 even on model errors, so the timeout wrapper is the primary safety net\n"}], "grading": {"expectations": [{"text": "codex exec \uba85\ub839\uc5b4\ub97c \uc0ac\uc6a9\ud568", "passed": true, "evidence": "timeout 120 codex exec --ephemeral -s read-only -o ... \uc0ac\uc6a9"}, {"text": "--ephemeral \ud50c\ub798\uadf8\uac00 \ud3ec\ud568\ub428", "passed": true, "evidence": "--ephemeral \ud50c\ub798\uadf8 \ud3ec\ud568 \ud655\uc778"}, {"text": "-s read-only \uc0cc\ub4dc\ubc15\uc2a4 \ubaa8\ub4dc\uac00 \uc0ac\uc6a9\ub428", "passed": true, "evidence": "-s read-only \uc0ac\uc6a9"}, {"text": "-o \ud50c\ub798\uadf8\ub85c \uacb0\uacfc\ub97c \ud30c\uc77c\uc5d0 \uc800\uc7a5\ud568", "passed": true, "evidence": "-o /tmp/codex_calculator_review.md"}, {"text": "heredoc \ub610\ub294 $(cat file) \ud328\ud134\uc73c\ub85c \ud30c\uc77c \ub0b4\uc6a9\uc744 \ud504\ub86c\ud504\ud2b8\uc5d0 \ud3ec\ud568", "passed": true, "evidence": "<<'EOF' heredoc + $(cat src/utils/calculator.py) \ud328\ud134 \uc0ac\uc6a9"}, {"text": "timeout \ub798\ud551\uc774 \ud3ec\ud568\ub428", "passed": true, "evidence": "timeout 120 \ub798\ud551 + TIMEOUT fallback \ucc98\ub9ac"}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}}}, {"id": "eval-1-basic-code-review-without_skill", "prompt": "src/utils/calculator.py \ud30c\uc77c\uc744 Codex\ub85c \ub9ac\ubdf0\ud574\uc918. \ub85c\uc9c1 \uc624\ub958\ub098 \uc5e3\uc9c0 \ucf00\uc774\uc2a4 \ubb38\uc81c\uac00 \uc788\ub294\uc9c0 \ud655\uc778\ud574\uc918.", "eval_id": 1, "outputs": [{"name": "execution_plan.md", "type": "text", "content": "# Execution Plan: Code Review of src/utils/calculator.py with Codex CLI\n\n## Objective\n\nUse the Codex CLI to review `src/utils/calculator.py` for logic errors and edge case issues.\n\n## Commands\n\n### Command 1: Review the file with Codex CLI\n\n```bash\ncodex --approval-mode suggest \\\n  \"src/utils/calculator.py \ud30c\uc77c\uc744 \ub9ac\ubdf0\ud574\uc918. \ub2e4\uc74c \ud56d\ubaa9\uc744 \uc911\uc810\uc801\uc73c\ub85c \ud655\uc778\ud574\uc918:\n   1. \ub85c\uc9c1 \uc624\ub958 (\uc798\ubabb\ub41c \uc5f0\uc0b0, \uc870\uac74\ubb38 \uc2e4\uc218 \ub4f1)\n   2. \uc5e3\uc9c0 \ucf00\uc774\uc2a4 \ucc98\ub9ac (0\uc73c\ub85c \ub098\ub204\uae30, \uc624\ubc84\ud50c\ub85c\uc6b0, \ube48 \uc785\ub825, None \uac12 \ub4f1)\n   3. \ud0c0\uc785 \uad00\ub828 \ubb38\uc81c (\uc798\ubabb\ub41c \ud0c0\uc785 \uc785\ub825 \uc2dc \ub3d9\uc791)\n   4. \uacbd\uacc4\uac12 \ucc98\ub9ac (\uc74c\uc218, \ub9e4\uc6b0 \ud070 \uc218, \uc18c\uc218\uc810 \uc815\ubc00\ub3c4 \ub4f1)\n   \ud574\ub2f9 \ud30c\uc77c\uc758 \ucf54\ub4dc\ub97c \uc77d\uace0 \ubb38\uc81c\uc810\uacfc \uac1c\uc120 \uc0ac\ud56d\uc744 \uc815\ub9ac\ud574\uc918.\"\n```\n\n### Explanation of flags and parameters\n\n| Flag / Parameter | Description |\n|---|---|\n| `codex` | Codex CLI binary (OpenAI Codex CLI tool) |\n| `--approval-mode suggest` | Codex can read files and suggest changes but cannot write without approval. This is appropriate for a review task where we want analysis, not automatic modifications. |\n| `\"src/utils/calculator.py ...\"` | The prompt describing the review task, passed as a positional argument. |\n\n### Alternative: Full auto mode (read-only review)\n\nIf you only want Codex to read and analyze without any write suggestions:\n\n```bash\ncodex --approval-mode suggest \\\n  \"Read the file src/utils/calculator.py and perform a thorough code review. Focus on:\n   1. Logic errors (incorrect operations, conditional mistakes)\n   2. Edge case handling (division by zero, overflow, empty input, None values)\n   3. Type safety issues (behavior with wrong input types)\n   4. Boundary value handling (negative numbers, very large numbers, floating point precision)\n   Summarize all issues found with line numbers and suggested fixes.\"\n```\n\n### Alternative: Using a specific model\n\n```bash\ncodex --model o4-mini --approval-mode suggest \\\n  \"Review src/utils/calculator.py for logic errors and edge cases. Report all issues.\"\n```\n\n### Alternative: Piping file content directly\n\nIf you want to ensure the file content is included in the prompt:\n\n```bash\ncat src/utils/calculator.py | codex --approval-mode suggest \\\n  \"\uc704 \ucf54\ub4dc\ub97c \ub9ac\ubdf0\ud574\uc918. \ub85c\uc9c1 \uc624\ub958, \uc5e3\uc9c0 \ucf00\uc774\uc2a4 \ub204\ub77d, \ud0c0\uc785 \uc548\uc804\uc131 \ubb38\uc81c\ub97c \ucc3e\uc544\uc918.\"\n```\n\n## Notes\n\n- `--approval-mode suggest` is the recommended mode for code review. It allows Codex to read files freely and suggest changes, but requires user approval before any writes.\n- Other approval modes: `full-auto` (no approval needed), `ask` (approval needed for all file operations).\n- The Codex CLI automatically has access to the working directory's files, so it can read `src/utils/calculator.py` directly.\n- No `--exec` flag is needed since we are not running shell commands; we are asking for analysis.\n"}], "grading": {"expectations": [{"text": "codex exec \uba85\ub839\uc5b4\ub97c \uc0ac\uc6a9\ud568", "passed": false, "evidence": "codex --approval-mode suggest \uc0ac\uc6a9 (interactive \ubaa8\ub4dc). exec \ubaa8\ub4dc \ubbf8\uc0ac\uc6a9. --approval-mode\ub294 \uc874\uc7ac\ud558\uc9c0 \uc54a\ub294 \ud50c\ub798\uadf8"}, {"text": "--ephemeral \ud50c\ub798\uadf8\uac00 \ud3ec\ud568\ub428", "passed": false, "evidence": "--ephemeral \ubbf8\uc0ac\uc6a9"}, {"text": "-s read-only \uc0cc\ub4dc\ubc15\uc2a4 \ubaa8\ub4dc\uac00 \uc0ac\uc6a9\ub428", "passed": false, "evidence": "-s \ud50c\ub798\uadf8 \ubbf8\uc0ac\uc6a9. \ub300\uc2e0 \uc874\uc7ac\ud558\uc9c0 \uc54a\ub294 --approval-mode suggest \uc0ac\uc6a9"}, {"text": "-o \ud50c\ub798\uadf8\ub85c \uacb0\uacfc\ub97c \ud30c\uc77c\uc5d0 \uc800\uc7a5\ud568", "passed": false, "evidence": "-o \ud50c\ub798\uadf8 \ubbf8\uc0ac\uc6a9. \uacb0\uacfc\uac00 stdout\uc73c\ub85c\ub9cc \ucd9c\ub825\ub428"}, {"text": "heredoc \ub610\ub294 $(cat file) \ud328\ud134\uc73c\ub85c \ud30c\uc77c \ub0b4\uc6a9\uc744 \ud504\ub86c\ud504\ud2b8\uc5d0 \ud3ec\ud568", "passed": false, "evidence": "pipe \ub300\uc548\uc740 \uc5b8\uae09\ud558\ub098 \uae30\ubcf8 \uba85\ub839\uc5b4\uc5d0\uc11c \ud30c\uc77c \ub0b4\uc6a9 \ubbf8\ud3ec\ud568. pipe \uc608\uc2dc\ub3c4 prompt arg\uc640 stdin \ub3d9\uc2dc \uc0ac\uc6a9\uc73c\ub85c stdin\uc774 \ubb34\uc2dc\ub428"}, {"text": "timeout \ub798\ud551\uc774 \ud3ec\ud568\ub428", "passed": false, "evidence": "timeout \ubbf8\uc0ac\uc6a9"}], "summary": {"passed": 0, "failed": 6, "total": 6, "pass_rate": 0.0}}}, {"id": "eval-2-security-audit-xv-with_skill", "prompt": "\uc774 PR\uc5d0\uc11c \ubcc0\uacbd\ub41c src/auth/ \ub514\ub809\ud1a0\ub9ac \uc804\uccb4\ub97c \ubcf4\uc548 \uad00\uc810\uc5d0\uc11c Codex\ub85c \ub3c5\ub9bd\uc801\uc73c\ub85c \uac80\uc99d\ud574\uc918. cross-verification \uc544\ud2f0\ud329\ud2b8\ub97c /tmp/xv/\uc5d0 \ub0a8\uaca8\uc918.", "eval_id": 2, "outputs": [{"name": "execution_plan.md", "type": "text", "content": "# Execution Plan: Security Audit Cross-Verification of src/auth/\n\nTask: PR\uc758 `src/auth/` \ub514\ub809\ud1a0\ub9ac \uc804\uccb4\ub97c \ubcf4\uc548 \uad00\uc810\uc5d0\uc11c Codex CLI\ub85c \ub3c5\ub9bd \uac80\uc99d\ud558\uace0, cross-verification \uc544\ud2f0\ud329\ud2b8\ub97c `/tmp/xv/`\uc5d0 \uc0dd\uc131\ud55c\ub2e4.\n\n---\n\n## Step 1: Codex CLI Availability Check\n\n```bash\nif ! command -v codex &>/dev/null; then\n  echo \"CODEX_NOT_AVAILABLE: skipping cross-verification\"\n  mkdir -p /tmp/xv/\n  cat > /tmp/xv/codex_security_audit.md << 'UNAVAIL'\n# Codex Security Audit \u2014 SKIPPED\nStatus: UNAVAILABLE\nReason: codex CLI not installed. Install: npm install -g @openai/codex\nUNAVAIL\n  exit 1\nfi\n```\n\n## Step 2: Artifact Directory Setup\n\n```bash\nmkdir -p /tmp/xv/security-audit/\n```\n\n## Step 3: Identify All Files in src/auth/\n\n```bash\nAUTH_FILES=$(find src/auth/ -type f -name '*.py' -o -name '*.ts' -o -name '*.js' | sort)\necho \"Files to audit:\"\necho \"$AUTH_FILES\"\n```\n\n## Step 4: Per-File Parallel Security Audit via Codex\n\nEach file in `src/auth/` is reviewed independently in parallel, using read-only sandbox mode with a 120-second timeout per file.\n\n```bash\nfor FILE in $AUTH_FILES; do\n  BASENAME=$(basename \"$FILE\" | sed 's/\\.[^.]*$//')\n  timeout 120 codex exec --ephemeral -s read-only \\\n    -o \"/tmp/xv/security-audit/codex_${BASENAME}.md\" \\\n    \"$(cat <<PROMPT\nYou are performing an independent security audit for cross-verification.\nAnother AI has already reviewed this code. Your job is to provide an independent security-focused perspective.\n\n## File Under Audit\nFile: $FILE\n\n$(cat \"$FILE\")\n\n## Security Audit Criteria\n1. **Injection Vulnerabilities**: SQL injection, command injection, template injection, LDAP injection\n2. **Authentication Gaps**: Weak credential handling, missing MFA checks, session fixation\n3. **Authorization Bypass**: Privilege escalation, IDOR, missing role checks, broken access control\n4. **Sensitive Data Exposure**: Hardcoded secrets, API keys in code, credentials in logs, PII leakage\n5. **Input Validation**: Missing or insufficient validation on auth endpoints, type confusion\n6. **Cryptographic Issues**: Weak hashing algorithms, insecure token generation, missing salt\n7. **Session Management**: Insecure cookie flags, missing expiration, token reuse\n8. **Deserialization**: Unsafe deserialization of auth tokens or session data\n\n## Output Format\n# Codex Security Audit \u2014 ${BASENAME}\nStatus: PASS | FAIL | PASS_WITH_COMMENTS\n\n## Findings\nFor each finding:\n- **[CRITICAL/HIGH/MEDIUM/LOW]** Line N \u2014 Description\n- **Attack Vector**: How this could be exploited\n- **Recommendation**: How to fix\n\n## Summary Table\n| File | Line | Issue | Severity | Recommendation |\n|------|------|-------|----------|----------------|\n\n## Verdict: APPROVE | APPROVE_WITH_COMMENTS | REQUEST_CHANGES\nPROMPT\n  )\" || echo \"# Codex Security Audit \u2014 ${BASENAME} \u2014 TIMEOUT\" > \"/tmp/xv/security-audit/codex_${BASENAME}.md\" &\ndone\n\n# Wait for all parallel jobs with an overall timeout of 180 seconds\nWAIT_PID=$$\n( sleep 180 && kill -TERM $WAIT_PID 2>/dev/null ) &\nWATCHDOG=$!\nwait\nkill $WATCHDOG 2>/dev/null\n```\n\n## Step 5: Directory-Level Holistic Security Audit\n\nAfter per-file reviews, run a single holistic audit across the entire directory to catch cross-file issues (e.g., inconsistent auth checks, missing middleware on certain routes).\n\n```bash\ntimeout 120 codex exec --ephemeral -s read-only \\\n  -o /tmp/xv/security-audit/codex_holistic_auth.md \\\n  \"$(cat <<'PROMPT'\nYou are performing a holistic security audit of the entire src/auth/ directory for cross-verification.\n\n## All Auth Files\n$(find src/auth/ -type f \\( -name '*.py' -o -name '*.ts' -o -name '*.js' \\) -exec echo \"=== {} ===\" \\; -exec cat {} \\;)\n\n## Cross-File Security Audit Criteria\n1. **Consistency**: Are auth checks applied uniformly across all entry points?\n2. **Middleware Gaps**: Are there routes or handlers that skip authentication/authorization?\n3. **Token Flow**: Is token generation, validation, and revocation handled consistently?\n4. **Privilege Boundaries**: Are role/permission checks consistent across the module?\n5. **Error Handling**: Do auth failures leak implementation details or timing information?\n6. **Dependency Issues**: Are auth dependencies (JWT libs, bcrypt, etc.) used securely?\n\n## Output Format\n# Codex Holistic Security Audit \u2014 src/auth/\n\n## Cross-File Findings\n- **[SEVERITY]** Files involved \u2014 Description\n- **Attack Vector**: Explanation\n- **Recommendation**: Fix\n\n## Architecture Concerns\n(Any structural issues with the auth module design)\n\n## Verdict: APPROVE | APPROVE_WITH_COMMENTS | REQUEST_CHANGES\nPROMPT\n)\" || echo \"# Codex Holistic Security Audit \u2014 TIMEOUT\" > /tmp/xv/security-audit/codex_holistic_auth.md\n```\n\n## Step 6: Verify Artifacts and Generate Summary\n\n```bash\necho \"=== Cross-Verification Artifacts ===\"\nls -la /tmp/xv/security-audit/codex_*.md\necho \"\"\necho \"=== Artifact Contents Summary ===\"\nfor f in /tmp/xv/security-audit/codex_*.md; do\n  echo \"--- $(basename \"$f\") ---\"\n  head -5 \"$f\"\n  echo \"\"\ndone\n```\n\n## Step 7: Aggregate Verdict\n\n```bash\n# Check for any FAIL or REQUEST_CHANGES verdicts\nif grep -ril \"REQUEST_CHANGES\\|Status: FAIL\" /tmp/xv/security-audit/codex_*.md; then\n  echo \"CROSS-VERIFICATION RESULT: ISSUES FOUND \u2014 see artifacts in /tmp/xv/security-audit/\"\nelif grep -ril \"TIMEOUT\" /tmp/xv/security-audit/codex_*.md; then\n  echo \"CROSS-VERIFICATION RESULT: INCOMPLETE \u2014 some reviews timed out\"\nelse\n  echo \"CROSS-VERIFICATION RESULT: PASS\"\nfi\n```\n\n---\n\n## Artifact Structure\n\n```\n/tmp/xv/\n\u2514\u2500\u2500 security-audit/\n    \u251c\u2500\u2500 codex_middleware.md        # Per-file: auth middleware review\n    \u251c\u2500\u2500 codex_routes.md           # Per-file: auth routes review\n    \u251c\u2500\u2500 codex_tokens.md           # Per-file: token handling review\n    \u251c\u2500\u2500 codex_<basename>.md       # Per-file: one per src/auth/ file\n    \u2514\u2500\u2500 codex_holistic_auth.md    # Cross-file: holistic directory audit\n```\n\n## Key Design Decisions\n\n| Decision | Rationale | Skill Reference |\n|----------|-----------|-----------------|\n| `--ephemeral` on every call | No session clutter; clean isolated runs | SKILL.md Pattern 1 |\n| `-s read-only` sandbox | Safety \u2014 Codex cannot modify any files | SKILL.md Key Flags |\n| `timeout 120` per invocation | Prevents hangs on large files; exit code signals timeout | SKILL.md Pattern 7 |\n| Parallel `&` with `wait` | Speed \u2014 all files reviewed concurrently | review-patterns.md Multi-File section |\n| `-o` file output per review | Clean artifact per file; no stdout parsing needed | SKILL.md Pattern 1 |\n| Holistic pass after per-file | Catches cross-file auth inconsistencies not visible per-file | Custom addition based on security audit scope |\n| Timeout fallback writes marker file | Downstream aggregation knows which reviews completed | SKILL.md Agent Teams Integration |\n| Availability check first | Graceful degradation if codex not installed | SKILL.md Prerequisites |\n"}], "grading": {"expectations": [{"text": "/tmp/xv/ \uc544\ud2f0\ud329\ud2b8 \ub514\ub809\ud1a0\ub9ac\ub97c mkdir -p\ub85c \uc0dd\uc131\ud568", "passed": true, "evidence": "mkdir -p /tmp/xv/security-audit/"}, {"text": "codex exec \uba85\ub839\uc5b4\uac00 \uc0ac\uc6a9\ub428", "passed": true, "evidence": "\ubaa8\ub4e0 \ud638\ucd9c\uc5d0\uc11c codex exec \uc0ac\uc6a9"}, {"text": "-s read-only \ub610\ub294 \uc801\uc808\ud55c \uc0cc\ub4dc\ubc15\uc2a4 \ubaa8\ub4dc\uac00 \uc0ac\uc6a9\ub428", "passed": true, "evidence": "-s read-only \ubaa8\ub4e0 \ud638\ucd9c\uc5d0\uc11c \uc0ac\uc6a9"}, {"text": "-o \ud50c\ub798\uadf8\ub85c /tmp/xv/ \uacbd\ub85c\uc5d0 \uc544\ud2f0\ud329\ud2b8 \uc800\uc7a5", "passed": true, "evidence": "-o /tmp/xv/security-audit/codex_${BASENAME}.md"}, {"text": "\ud504\ub86c\ud504\ud2b8\uc5d0 \ubcf4\uc548 \uad00\ub828 \uac80\uc0ac \ud56d\ubaa9\uc774 \ud3ec\ud568\ub428", "passed": true, "evidence": "8\uac1c \ubcf4\uc548 \uce74\ud14c\uace0\ub9ac: Injection, Auth Gaps, AuthZ Bypass, Data Exposure, Input Validation, Crypto, Session, Deserialization"}, {"text": "\uc544\ud2f0\ud329\ud2b8\uac00 \ud45c\uc900 \ud3ec\ub9f7(Status, Findings, Verdict)\uc744 \ub530\ub984", "passed": true, "evidence": "Status: PASS|FAIL|PASS_WITH_COMMENTS, ## Findings [SEVERITY], ## Verdict \ud3ec\ub9f7 \uc0ac\uc6a9"}, {"text": "timeout \ub798\ud551\uc774 \ud3ec\ud568\ub428", "passed": true, "evidence": "timeout 120 \ubaa8\ub4e0 codex exec \ud638\ucd9c\uc5d0 \uc801\uc6a9"}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1.0}}}, {"id": "eval-2-security-audit-xv-without_skill", "prompt": "\uc774 PR\uc5d0\uc11c \ubcc0\uacbd\ub41c src/auth/ \ub514\ub809\ud1a0\ub9ac \uc804\uccb4\ub97c \ubcf4\uc548 \uad00\uc810\uc5d0\uc11c Codex\ub85c \ub3c5\ub9bd\uc801\uc73c\ub85c \uac80\uc99d\ud574\uc918. cross-verification \uc544\ud2f0\ud329\ud2b8\ub97c /tmp/xv/\uc5d0 \ub0a8\uaca8\uc918.", "eval_id": 2, "outputs": [{"name": "execution_plan.md", "type": "text", "content": "# Execution Plan: Security Audit Cross-Verification with Codex CLI\n\n## Task\n\nPR\uc758 `src/auth/` \ub514\ub809\ud1a0\ub9ac \ubcc0\uacbd\uc0ac\ud56d\uc744 \ubcf4\uc548 \uad00\uc810\uc5d0\uc11c Codex CLI\ub85c \ub3c5\ub9bd \uac80\uc99d\ud558\uace0,\ncross-verification \uc544\ud2f0\ud329\ud2b8\ub97c `/tmp/xv/`\uc5d0 \uc800\uc7a5\ud55c\ub2e4.\n\n---\n\n## Step 1: Artifact Directory Setup\n\n```bash\n# \uc544\ud2f0\ud329\ud2b8 \ub8e8\ud2b8 \ubc0f \ud558\uc704 \uad6c\uc870 \uc0dd\uc131\nmkdir -p /tmp/xv/security-audit/{pass-1,pass-2,summary}\n\n# \ud0c0\uc784\uc2a4\ud0ec\ud504 \uae30\ub85d (\uc7ac\ud604\uc131 \ud655\ubcf4)\ndate -u +\"%Y-%m-%dT%H:%M:%SZ\" > /tmp/xv/security-audit/timestamp.txt\n\n# PR\uc5d0\uc11c \ubcc0\uacbd\ub41c src/auth/ \ud30c\uc77c \ubaa9\ub85d \ucd94\ucd9c (base branch \ub300\ube44)\ngit diff --name-only main -- src/auth/ > /tmp/xv/security-audit/changed_files.txt\n```\n\n---\n\n## Step 2: Pass 1 -- Codex CLI \ubcf4\uc548 \uac10\uc0ac (\uccab \ubc88\uc9f8 \ub3c5\ub9bd \ud328\uc2a4)\n\n```bash\ncodex exec \\\n  -s read-only \\\n  -o /tmp/xv/security-audit/pass-1/report.md \\\n  \"You are a security auditor. Review ALL files under src/auth/ for security vulnerabilities.\nFocus on:\n1. Authentication bypass risks\n2. Injection vulnerabilities (SQL, NoSQL, command injection)\n3. Insecure token/session handling (hardcoded secrets, weak algorithms, missing expiry)\n4. Improper input validation or sanitization\n5. Broken access control or privilege escalation paths\n6. Information leakage (verbose errors, stack traces, PII exposure)\n7. Insecure cryptographic usage (weak hashing, missing salts, ECB mode)\n8. Race conditions in auth flows\n\nOutput a structured markdown report with:\n- CRITICAL / HIGH / MEDIUM / LOW severity per finding\n- Affected file path and line range\n- Description of the vulnerability\n- Recommended fix\"\n```\n\n---\n\n## Step 3: Pass 2 -- Codex CLI \ubcf4\uc548 \uac10\uc0ac (\ub450 \ubc88\uc9f8 \ub3c5\ub9bd \ud328\uc2a4, \ub2e4\ub978 \ubaa8\ub378 \ub610\ub294 \ud504\ub86c\ud504\ud2b8)\n\n\ub450 \ubc88\uc9f8 \ud328\uc2a4\ub294 \uc758\ub3c4\uc801\uc73c\ub85c \ub2e4\ub978 \uad00\uc810(\uacf5\uaca9\uc790 \uc2dc\ubbac\ub808\uc774\uc158)\uc73c\ub85c \uc218\ud589\ud558\uc5ec \uad50\ucc28 \uac80\uc99d \ud6a8\uacfc\ub97c \ub192\uc778\ub2e4.\n\n```bash\ncodex exec \\\n  -s read-only \\\n  -m o3 \\\n  -o /tmp/xv/security-audit/pass-2/report.md \\\n  \"You are a penetration tester simulating attacks against this application.\nExamine every file under src/auth/ and attempt to find exploitable weaknesses.\nFor each finding provide:\n- Attack scenario (step-by-step how an attacker would exploit it)\n- Severity (CRITICAL / HIGH / MEDIUM / LOW)\n- Affected file and line numbers\n- Proof-of-concept payload or code snippet if applicable\n- Mitigation recommendation\n\nBe thorough: check for OWASP Top 10 issues, SSRF, CSRF token handling,\nJWT misconfiguration, OAuth flow weaknesses, password storage issues,\nand any logic flaws in authentication state machines.\"\n```\n\n---\n\n## Step 4: Cross-Verification Summary \uc0dd\uc131\n\n\ub450 \ud328\uc2a4\uc758 \uacb0\uacfc\ub97c \ube44\uad50\ud558\uc5ec \uc77c\uce58/\ubd88\uc77c\uce58 \ud56d\ubaa9\uc744 \uc815\ub9ac\ud55c\ub2e4.\n\n```bash\ncodex exec \\\n  -s read-only \\\n  -o /tmp/xv/security-audit/summary/cross_verification.md \\\n  \"You have two independent security audit reports.\n\nPass 1 report:\n$(cat /tmp/xv/security-audit/pass-1/report.md)\n\nPass 2 report:\n$(cat /tmp/xv/security-audit/pass-2/report.md)\n\nCompare these two reports and produce a cross-verification summary:\n1. CONFIRMED findings: issues found by BOTH passes (highest confidence)\n2. UNIQUE to Pass 1: issues only the first auditor found\n3. UNIQUE to Pass 2: issues only the second auditor found\n4. CONTRADICTIONS: any conflicting assessments between the two passes\n5. OVERALL RISK ASSESSMENT: combined severity rating for src/auth/\n6. RECOMMENDED ACTIONS: prioritized list of fixes\n\nFormat as structured markdown with clear tables where appropriate.\"\n```\n\n---\n\n## Step 5: JSONL \uc774\ubca4\ud2b8 \ub85c\uadf8 \ubcf4\uc874 (\uc120\ud0dd\uc801, \ub514\ubc84\uae45\uc6a9)\n\n\uac01 \ud328\uc2a4\uc5d0\uc11c `--json` \ud50c\ub798\uadf8\ub85c \uc804\uccb4 \uc5d0\uc774\uc804\ud2b8 \uc774\ubca4\ud2b8\ub97c \uae30\ub85d\ud560 \uc218\ub3c4 \uc788\ub2e4.\n\n```bash\n# Pass 1 with full event log\ncodex exec \\\n  -s read-only \\\n  --json \\\n  -o /tmp/xv/security-audit/pass-1/report.md \\\n  \"...\" \\\n  > /tmp/xv/security-audit/pass-1/events.jsonl\n\n# Pass 2 with full event log\ncodex exec \\\n  -s read-only \\\n  -m o3 \\\n  --json \\\n  -o /tmp/xv/security-audit/pass-2/report.md \\\n  \"...\" \\\n  > /tmp/xv/security-audit/pass-2/events.jsonl\n```\n\n---\n\n## Final Artifact Structure\n\n```\n/tmp/xv/\n\u2514\u2500\u2500 security-audit/\n    \u251c\u2500\u2500 timestamp.txt                  # \uc2e4\ud589 \uc2dc\uac01\n    \u251c\u2500\u2500 changed_files.txt              # PR\uc5d0\uc11c \ubcc0\uacbd\ub41c src/auth/ \ud30c\uc77c \ubaa9\ub85d\n    \u251c\u2500\u2500 pass-1/\n    \u2502   \u251c\u2500\u2500 report.md                  # \uccab \ubc88\uc9f8 \ud328\uc2a4 \ubcf4\uc548 \uac10\uc0ac \ubcf4\uace0\uc11c\n    \u2502   \u2514\u2500\u2500 events.jsonl               # (\uc120\ud0dd) \uc5d0\uc774\uc804\ud2b8 \uc774\ubca4\ud2b8 \ub85c\uadf8\n    \u251c\u2500\u2500 pass-2/\n    \u2502   \u251c\u2500\u2500 report.md                  # \ub450 \ubc88\uc9f8 \ud328\uc2a4 \ubcf4\uc548 \uac10\uc0ac \ubcf4\uace0\uc11c\n    \u2502   \u2514\u2500\u2500 events.jsonl               # (\uc120\ud0dd) \uc5d0\uc774\uc804\ud2b8 \uc774\ubca4\ud2b8 \ub85c\uadf8\n    \u2514\u2500\u2500 summary/\n        \u2514\u2500\u2500 cross_verification.md      # \uad50\ucc28 \uac80\uc99d \uc885\ud569 \ubcf4\uace0\uc11c\n```\n\n---\n\n## Key Design Decisions\n\n| Decision | Rationale |\n|---|---|\n| `read-only` sandbox | \ubcf4\uc548 \uac10\uc0ac\ub294 \ucf54\ub4dc\ub97c \uc77d\uae30\ub9cc \ud574\uc57c \ud558\ubbc0\ub85c \uc4f0\uae30 \uad8c\ud55c \ubd88\ud544\uc694 |\n| \ub450 \ud328\uc2a4\uc5d0 \ub2e4\ub978 \ubaa8\ub378/\ud504\ub86c\ud504\ud2b8 \uc0ac\uc6a9 | \ub3c5\ub9bd\uc801 \uad00\uc810 \ud655\ubcf4\ub85c cross-verification \uc2e0\ub8b0\ub3c4 \ud5a5\uc0c1 |\n| `-o` \ud50c\ub798\uadf8\ub85c \ub9c8\uc9c0\ub9c9 \uba54\uc2dc\uc9c0 \uc800\uc7a5 | \uc5d0\uc774\uc804\ud2b8\uc758 \ucd5c\uc885 \ubcf4\uace0\uc11c\ub9cc \uae54\ub054\ud558\uac8c \ucd94\ucd9c |\n| `--json` \uc774\ubca4\ud2b8 \ub85c\uadf8 | \uac10\uc0ac \uacfc\uc815\uc758 \uc7ac\ud604\uc131\uacfc \ucd94\uc801\uc131 \ud655\ubcf4 |\n| \ubcc0\uacbd \ud30c\uc77c \ubaa9\ub85d \ubcc4\ub3c4 \uae30\ub85d | \uc5b4\ub5a4 \ud30c\uc77c\uc774 \uac10\uc0ac \ub300\uc0c1\uc774\uc5c8\ub294\uc9c0 \uba85\uc2dc\uc801 \uae30\ub85d |\n\n---\n\n## Execution (One-Shot Script)\n\n\uc544\ub798\ub294 \uc804\uccb4 \uacfc\uc815\uc744 \ud558\ub098\uc758 \uc2a4\ud06c\ub9bd\ud2b8\ub85c \uc2e4\ud589\ud558\ub294 \uc608\uc2dc\uc774\ub2e4.\n\n```bash\n#!/usr/bin/env bash\nset -euo pipefail\n\nXV_DIR=\"/tmp/xv/security-audit\"\nREPO_ROOT=\"$(git rev-parse --show-toplevel)\"\n\n# Setup\nmkdir -p \"$XV_DIR\"/{pass-1,pass-2,summary}\ndate -u +\"%Y-%m-%dT%H:%M:%SZ\" > \"$XV_DIR/timestamp.txt\"\ngit diff --name-only main -- src/auth/ > \"$XV_DIR/changed_files.txt\"\n\nPASS1_PROMPT=\"You are a security auditor. Review ALL files under src/auth/ for security vulnerabilities. Focus on: authentication bypass, injection, insecure token handling, input validation, access control, information leakage, weak crypto, race conditions. Output a structured markdown report with CRITICAL/HIGH/MEDIUM/LOW severity, affected file and line range, description, and recommended fix.\"\n\nPASS2_PROMPT=\"You are a penetration tester simulating attacks against this application. Examine every file under src/auth/ for exploitable weaknesses. For each finding: attack scenario, severity, affected file/lines, PoC payload, mitigation. Check OWASP Top 10, SSRF, CSRF, JWT, OAuth, password storage, auth logic flaws.\"\n\n# Pass 1\ncodex exec -s read-only \\\n  --json \\\n  -o \"$XV_DIR/pass-1/report.md\" \\\n  \"$PASS1_PROMPT\" \\\n  > \"$XV_DIR/pass-1/events.jsonl\"\n\n# Pass 2 (different model for independence)\ncodex exec -s read-only \\\n  -m o3 \\\n  --json \\\n  -o \"$XV_DIR/pass-2/report.md\" \\\n  \"$PASS2_PROMPT\" \\\n  > \"$XV_DIR/pass-2/events.jsonl\"\n\n# Cross-verification summary\nSUMMARY_PROMPT=\"$(cat <<XVEOF\nYou have two independent security audit reports for src/auth/.\n\n--- PASS 1 ---\n$(cat \"$XV_DIR/pass-1/report.md\")\n\n--- PASS 2 ---\n$(cat \"$XV_DIR/pass-2/report.md\")\n\nCompare and produce a cross-verification summary:\n1. CONFIRMED findings (both passes agree)\n2. UNIQUE to Pass 1\n3. UNIQUE to Pass 2\n4. CONTRADICTIONS\n5. OVERALL RISK ASSESSMENT\n6. RECOMMENDED ACTIONS (prioritized)\nXVEOF\n)\"\n\ncodex exec -s read-only \\\n  -o \"$XV_DIR/summary/cross_verification.md\" \\\n  \"$SUMMARY_PROMPT\"\n\necho \"Cross-verification complete. Artifacts at: $XV_DIR\"\n```\n"}], "grading": {"expectations": [{"text": "/tmp/xv/ \uc544\ud2f0\ud329\ud2b8 \ub514\ub809\ud1a0\ub9ac\ub97c mkdir -p\ub85c \uc0dd\uc131\ud568", "passed": true, "evidence": "mkdir -p /tmp/xv/security-audit/{pass-1,pass-2,summary}"}, {"text": "codex exec \uba85\ub839\uc5b4\uac00 \uc0ac\uc6a9\ub428", "passed": true, "evidence": "codex exec -s read-only \uc0ac\uc6a9"}, {"text": "-s read-only \ub610\ub294 \uc801\uc808\ud55c \uc0cc\ub4dc\ubc15\uc2a4 \ubaa8\ub4dc\uac00 \uc0ac\uc6a9\ub428", "passed": true, "evidence": "-s read-only \ubaa8\ub4e0 \ud638\ucd9c\uc5d0\uc11c \uc0ac\uc6a9"}, {"text": "-o \ud50c\ub798\uadf8\ub85c /tmp/xv/ \uacbd\ub85c\uc5d0 \uc544\ud2f0\ud329\ud2b8 \uc800\uc7a5", "passed": true, "evidence": "-o /tmp/xv/security-audit/pass-1/report.md \ub4f1"}, {"text": "\ud504\ub86c\ud504\ud2b8\uc5d0 \ubcf4\uc548 \uad00\ub828 \uac80\uc0ac \ud56d\ubaa9\uc774 \ud3ec\ud568\ub428", "passed": true, "evidence": "OWASP Top 10, injection, auth bypass, JWT, SSRF, CSRF \ub4f1 \ub2e4\uc218 \ud56d\ubaa9"}, {"text": "\uc544\ud2f0\ud329\ud2b8\uac00 \ud45c\uc900 \ud3ec\ub9f7(Status, Findings, Verdict)\uc744 \ub530\ub984", "passed": false, "evidence": "\ucee4\uc2a4\ud140 \ud3ec\ub9f7 \uc0ac\uc6a9 (CRITICAL/HIGH/MEDIUM/LOW severity\ub294 \uc788\uc73c\ub098 \ud45c\uc900 Status/Verdict \ud3ec\ub9f7 \ubbf8\uc0ac\uc6a9)"}, {"text": "timeout \ub798\ud551\uc774 \ud3ec\ud568\ub428", "passed": false, "evidence": "timeout \ubbf8\uc0ac\uc6a9. --ephemeral\ub3c4 \ubbf8\uc0ac\uc6a9"}], "summary": {"passed": 5, "failed": 2, "total": 7, "pass_rate": 0.71}}}, {"id": "eval-3-unavailable-fallback-with_skill", "prompt": "Codex\ub85c \uc774 \uc54c\uace0\ub9ac\uc998 \uc815\ud655\uc131 \uac80\uc99d\ud574\uc918. \uadfc\ub370 \ud639\uc2dc codex\uac00 \uc124\uce58 \uc548 \ub418\uc5b4 \uc788\uc73c\uba74 \uc5b4\ub5bb\uac8c \ud574\uc57c\ud558\ub294\uc9c0\ub3c4 \uc54c\ub824\uc918.", "eval_id": 3, "outputs": [{"name": "execution_plan.md", "type": "text", "content": "# Codex CLI Algorithm Verification - Execution Plan\n\n## Task\n\nCodex CLI\ub97c \uc0ac\uc6a9\ud558\uc5ec \uc54c\uace0\ub9ac\uc998 \uc815\ud655\uc131\uc744 \uac80\uc99d\ud55c\ub2e4. Codex\uac00 \uc124\uce58\ub418\uc5b4 \uc788\uc9c0 \uc54a\uc740 \uacbd\uc6b0\uc5d0 \ub300\ud55c \ub300\uccb4 \uacbd\ub85c\ub97c \ud3ec\ud568\ud55c\ub2e4.\n\n## Complete Bash Script\n\n```bash\n#!/usr/bin/env bash\nset -euo pipefail\n\n# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n# Configuration\n# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nALGO_FILE=\"${1:?Usage: $0 <algorithm_file>}\"\nOUTPUT_FILE=\"/tmp/codex_algo_verification.md\"\nTIMEOUT_SEC=120\n\n# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n# Step 1: Availability Check\n# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nif ! command -v codex &>/dev/null; then\n  echo \"============================================\"\n  echo \" CODEX CLI NOT INSTALLED\"\n  echo \"============================================\"\n  echo \"\"\n  echo \"Codex CLI\uac00 \uc124\uce58\ub418\uc5b4 \uc788\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.\"\n  echo \"\"\n  echo \"[\uc124\uce58 \ubc29\ubc95]\"\n  echo \"\"\n  echo \"  1. Node.js 22 \uc774\uc0c1\uc774 \ud544\uc694\ud569\ub2c8\ub2e4.\"\n  echo \"     node --version  # v22.x \uc774\uc0c1 \ud655\uc778\"\n  echo \"\"\n  echo \"  2. npm\uc73c\ub85c \uc804\uc5ed \uc124\uce58:\"\n  echo \"     npm install -g @openai/codex\"\n  echo \"\"\n  echo \"  3. \uc778\uc99d (\ucd5c\ucd08 1\ud68c):\"\n  echo \"     codex login\"\n  echo \"     # \ube0c\ub77c\uc6b0\uc800\uc5d0\uc11c ChatGPT \ub85c\uadf8\uc778\uc73c\ub85c \uc778\uc99d\ub429\ub2c8\ub2e4.\"\n  echo \"\"\n  echo \"  4. \uc124\uce58 \ud655\uc778:\"\n  echo \"     codex --version  # v0.1.0 \uc774\uc0c1\"\n  echo \"\"\n  echo \"============================================\"\n  echo \" FALLBACK: Claude \uc790\uccb4 \ubd84\uc11d \uc218\ud589\"\n  echo \"============================================\"\n  echo \"\"\n\n  # Fallback: Codex \uc5c6\uc774 placeholder artifact\ub97c \uc0dd\uc131\ud558\uc5ec\n  # \ub2e4\ub978 agent\ub098 synthesizer\uac00 \uc0c1\ud0dc\ub97c \ud30c\uc545\ud560 \uc218 \uc788\uac8c \ud55c\ub2e4.\n  cat > \"$OUTPUT_FILE\" << 'FALLBACK_EOF'\n# Algorithm Verification - SKIPPED\n\nStatus: CODEX_NOT_AVAILABLE\nReason: codex CLI not installed on this system\n\n## Fallback Recommendation\n\nCodex CLI\ub97c \ud1b5\ud55c \ub3c5\ub9bd\uc801 cross-verification\uc774 \ubd88\uac00\ud558\ubbc0\ub85c \ub2e4\uc74c \ub300\uc548\uc744 \uace0\ub824\ud558\uc138\uc694:\n\n1. **\uc218\ub3d9 \uc124\uce58 \ud6c4 \uc7ac\uc2e4\ud589**: `npm install -g @openai/codex && codex login`\n2. **Claude \uc790\uccb4 \ubd84\uc11d**: \ud604\uc7ac Claude agent\uac00 \uc9c1\uc811 \uc54c\uace0\ub9ac\uc998\uc744 \ubd84\uc11d (\ub3c5\ub9bd \uac80\uc99d\uc740 \uc544\ub2d8)\n3. **\ub2e4\ub978 \ub3c4\uad6c \ud65c\uc6a9**: \uc815\uc801 \ubd84\uc11d\uae30(mypy, pylint \ub4f1)\ub098 \ud14c\uc2a4\ud2b8 \ud504\ub808\uc784\uc6cc\ud06c\ub85c \ubcf4\uc644\nFALLBACK_EOF\n\n  echo \"Placeholder artifact \uc0dd\uc131\ub428: $OUTPUT_FILE\"\n  echo \"\"\n  echo \"Codex \uc5c6\uc774 Claude\uac00 \uc9c1\uc811 \uc54c\uace0\ub9ac\uc998 \ud30c\uc77c\uc744 \ubd84\uc11d\ud569\ub2c8\ub2e4...\"\n  echo \"\ub300\uc0c1 \ud30c\uc77c: $ALGO_FILE\"\n  echo \"\"\n  echo \"--- Claude \uc9c1\uc811 \ubd84\uc11d\uc744 \uc704\ud574 \ud30c\uc77c \ub0b4\uc6a9 \ucd9c\ub825 ---\"\n  cat \"$ALGO_FILE\"\n  exit 0\nfi\n\n# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n# Step 2: Version Check\n# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\necho \"Codex CLI \uac10\uc9c0\ub428: $(codex --version)\"\n\n# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n# Step 3: JSON Schema \uc815\uc758 (\uad6c\uc870\ud654\ub41c \ucd9c\ub825\uc6a9)\n# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\ncat > /tmp/algo_verify_schema.json << 'SCHEMA'\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"summary\": { \"type\": \"string\" },\n    \"correctness_issues\": {\n      \"type\": \"array\",\n      \"items\": { \"type\": \"string\" }\n    },\n    \"edge_cases\": {\n      \"type\": \"array\",\n      \"items\": { \"type\": \"string\" }\n    },\n    \"time_complexity\": { \"type\": \"string\" },\n    \"space_complexity\": { \"type\": \"string\" },\n    \"severity\": {\n      \"type\": \"string\",\n      \"enum\": [\"correct\", \"low\", \"medium\", \"high\", \"critical\"]\n    },\n    \"recommendation\": { \"type\": \"string\" }\n  },\n  \"required\": [\n    \"summary\",\n    \"correctness_issues\",\n    \"edge_cases\",\n    \"time_complexity\",\n    \"space_complexity\",\n    \"severity\",\n    \"recommendation\"\n  ],\n  \"additionalProperties\": false\n}\nSCHEMA\n\n# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n# Step 4: Codex\ub85c \uc54c\uace0\ub9ac\uc998 \uac80\uc99d \uc2e4\ud589\n# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\necho \"\uc54c\uace0\ub9ac\uc998 \uac80\uc99d \uc2dc\uc791: $ALGO_FILE\"\necho \"Timeout: ${TIMEOUT_SEC}s\"\n\ntimeout \"$TIMEOUT_SEC\" codex exec --ephemeral -s read-only --json \\\n  --output-schema /tmp/algo_verify_schema.json \\\n  -o \"$OUTPUT_FILE\" \\\n  \"$(cat <<PROMPT\nVerify the correctness of the following algorithm implementation.\nCheck for:\n1. Logical correctness - does it produce the right output for all valid inputs?\n2. Edge cases - empty input, single element, duplicates, negative numbers, overflow\n3. Off-by-one errors in loops and index operations\n4. Time and space complexity analysis\n5. Potential infinite loops or non-termination conditions\n\nAlgorithm code:\n\n$(cat \"$ALGO_FILE\")\n\nRespond with structured analysis including severity assessment.\nPROMPT\n)\" || {\n  EXIT_CODE=$?\n  if [ \"$EXIT_CODE\" -eq 124 ]; then\n    echo \"CODEX_TIMEOUT: ${TIMEOUT_SEC}s \ucd08\uacfc\"\n    cat > \"$OUTPUT_FILE\" << 'TIMEOUT_EOF'\n# Algorithm Verification - TIMEOUT\n\nStatus: CODEX_TIMEOUT\nReason: Codex CLI did not respond within the time limit.\nRecommendation: \ud30c\uc77c \ud06c\uae30\ub97c \uc904\uc774\uac70\ub098 timeout \uac12\uc744 \ub298\ub824 \uc7ac\uc2dc\ub3c4\ud558\uc138\uc694.\nTIMEOUT_EOF\n  else\n    echo \"CODEX_ERROR: exit code $EXIT_CODE\"\n    cat > \"$OUTPUT_FILE\" << 'ERROR_EOF'\n# Algorithm Verification - ERROR\n\nStatus: CODEX_ERROR\nReason: Codex CLI returned a non-zero exit code.\nRecommendation: `codex login` \uc73c\ub85c \uc778\uc99d \uc0c1\ud0dc\ub97c \ud655\uc778\ud558\uace0 \uc7ac\uc2dc\ub3c4\ud558\uc138\uc694.\nERROR_EOF\n  fi\n}\n\n# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n# Step 5: \uacb0\uacfc \ucd9c\ub825\n# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\necho \"\"\necho \"============================================\"\necho \" \uac80\uc99d \uacb0\uacfc\"\necho \"============================================\"\ncat \"$OUTPUT_FILE\"\necho \"\"\necho \"\uacb0\uacfc \uc800\uc7a5 \uc704\uce58: $OUTPUT_FILE\"\n```\n\n## Script Behavior Summary\n\n| Condition | Action |\n|-----------|--------|\n| `codex` not found | \uc124\uce58 \ubc29\ubc95 \uc548\ub0b4 \ucd9c\ub825, placeholder artifact \uc0dd\uc131, Claude \uc9c1\uc811 \ubd84\uc11d\uc73c\ub85c fallback |\n| `codex` found, normal execution | JSON Schema \uae30\ubc18 \uad6c\uc870\ud654 \ucd9c\ub825\uc73c\ub85c \uc54c\uace0\ub9ac\uc998 \uac80\uc99d \uc218\ud589 |\n| `codex` found, timeout (124) | TIMEOUT artifact \uc0dd\uc131, \uc7ac\uc2dc\ub3c4 \uad8c\uace0 |\n| `codex` found, other error | ERROR artifact \uc0dd\uc131, \uc778\uc99d \ud655\uc778 \uad8c\uace0 |\n\n## Key Design Decisions\n\n1. **Availability check**: `command -v codex &>/dev/null` -- SKILL.md\uc5d0\uc11c \uad8c\uc7a5\ud558\ub294 \ud328\ud134 \uadf8\ub300\ub85c \uc0ac\uc6a9\n2. **Read-only sandbox**: `-s read-only` -- \uc54c\uace0\ub9ac\uc998 \uac80\uc99d\uc740 \ud30c\uc77c \uc218\uc815\uc774 \ubd88\ud544\uc694\ud558\ubbc0\ub85c \uac00\uc7a5 \uc548\uc804\ud55c \ubaa8\ub4dc \uc0ac\uc6a9\n3. **Structured output**: `--output-schema`\ub85c JSON Schema\ub97c \uac15\uc81c\ud558\uc5ec \ud30c\uc2f1 \uac00\ub2a5\ud55c \uacb0\uacfc \ud655\ubcf4\n4. **Timeout wrapper**: `timeout 120` -- SKILL.md\uc5d0\uc11c sub-agent \uc0ac\uc6a9 \uc2dc \ud544\uc218\ub85c \uad8c\uc7a5\n5. **Ephemeral mode**: `--ephemeral` -- \uc138\uc158 \ud30c\uc77c \ubbf8\uc0dd\uc131\uc73c\ub85c \uae54\ub054\ud55c \uc2e4\ud589\n6. **Placeholder artifact**: Codex \ubbf8\uc124\uce58 \uc2dc\uc5d0\ub3c4 \ub2e4\ub978 agent/synthesizer\uac00 \uc0c1\ud0dc\ub97c \ud30c\uc545\ud560 \uc218 \uc788\ub3c4\ub85d \ud30c\uc77c \uc0dd\uc131\n\n## Installation Quick Reference\n\n```bash\n# Node.js 22+ \ud544\uc694\nnpm install -g @openai/codex\ncodex login\ncodex --version   # v0.1.0+ \ud655\uc778\n```\n"}], "grading": {"expectations": [{"text": "command -v codex \ub610\ub294 which codex\ub85c \uac00\uc6a9\uc131 \uccb4\ud06c\ub97c \uc218\ud589\ud568", "passed": true, "evidence": "command -v codex &>/dev/null \uc0ac\uc6a9"}, {"text": "npm install -g @openai/codex \uc124\uce58 \ubc29\ubc95\uc774 \ud3ec\ud568\ub428", "passed": true, "evidence": "npm install -g @openai/codex + Node.js 22+ + codex login \uc804\uccb4 \uc548\ub0b4"}, {"text": "if/else \ubd84\uae30\ub85c \uc124\uce58 \uc5ec\ubd80\uc5d0 \ub530\ub77c \ub2e4\ub978 \ub3d9\uc791\uc744 \uc218\ud589\ud568", "passed": true, "evidence": "if ! command -v codex \ubd84\uae30\ub85c \uc124\uce58/\ubbf8\uc124\uce58 \uacbd\ub85c \ubd84\ub9ac"}, {"text": "\uc124\uce58\ub41c \uacbd\uc6b0 codex exec\ub85c \uc54c\uace0\ub9ac\uc998 \uac80\uc99d \uba85\ub839\uc5b4\uac00 \ud3ec\ud568\ub428", "passed": true, "evidence": "codex exec --ephemeral -s read-only --json --output-schema \uc0ac\uc6a9 + JSON Schema \uc815\uc758"}, {"text": "\ubbf8\uc124\uce58 \uc2dc \ub300\uc548 \uc804\ub7b5\uc774 \uc81c\uc2dc\ub428", "passed": true, "evidence": "placeholder artifact \uc0dd\uc131 + Claude \uc9c1\uc811 \ubd84\uc11d + \uc815\uc801 \ubd84\uc11d\uae30(mypy, pylint) \ub300\uc548 \uc81c\uc2dc"}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}}}, {"id": "eval-3-unavailable-fallback-without_skill", "prompt": "Codex\ub85c \uc774 \uc54c\uace0\ub9ac\uc998 \uc815\ud655\uc131 \uac80\uc99d\ud574\uc918. \uadfc\ub370 \ud639\uc2dc codex\uac00 \uc124\uce58 \uc548 \ub418\uc5b4 \uc788\uc73c\uba74 \uc5b4\ub5bb\uac8c \ud574\uc57c\ud558\ub294\uc9c0\ub3c4 \uc54c\ub824\uc918.", "eval_id": 3, "outputs": [{"name": "execution_plan.md", "type": "text", "content": "# Codex CLI \uc54c\uace0\ub9ac\uc998 \uc815\ud655\uc131 \uac80\uc99d \u2014 \uc2e4\ud589 \uacc4\ud68d\n\n## \uac1c\uc694\n\nCodex CLI\uac00 \uc124\uce58\ub418\uc5b4 \uc788\ub294 \uacbd\uc6b0\uc640 \uc124\uce58\ub418\uc5b4 \uc788\uc9c0 \uc54a\uc740 \uacbd\uc6b0\ub97c \ubaa8\ub450 \ucc98\ub9ac\ud558\ub294 \uc2e4\ud589 \uacc4\ud68d\uc785\ub2c8\ub2e4.\n\n---\n\n## 1. Codex CLI \uac00\uc6a9\uc131 \ud655\uc778\n\n```bash\nif command -v codex &>/dev/null; then\n  echo \"Codex CLI\uac00 \uc124\uce58\ub418\uc5b4 \uc788\uc2b5\ub2c8\ub2e4. (\ubc84\uc804: $(codex --version))\"\n  CODEX_AVAILABLE=true\nelse\n  echo \"Codex CLI\uac00 \uc124\uce58\ub418\uc5b4 \uc788\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.\"\n  CODEX_AVAILABLE=false\nfi\n```\n\n---\n\n## 2. \uc124\uce58\ub418\uc5b4 \uc788\ub294 \uacbd\uc6b0: Codex\ub85c \uc54c\uace0\ub9ac\uc998 \uac80\uc99d \uc2e4\ud589\n\n```bash\nif [ \"$CODEX_AVAILABLE\" = true ]; then\n  # \uc54c\uace0\ub9ac\uc998 \ud30c\uc77c\uc744 heredoc \ud328\ud134\uc73c\ub85c \ud504\ub86c\ud504\ud2b8\uc5d0 \ud3ec\ud568\ud558\uc5ec \uac80\uc99d\n  timeout 120 codex exec --ephemeral -s read-only -o /tmp/algorithm_verification.txt \\\n    \"$(cat <<'EOF'\n\ub2e4\uc74c \uc54c\uace0\ub9ac\uc998\uc758 \uc815\ud655\uc131\uc744 \uac80\uc99d\ud574\uc8fc\uc138\uc694:\n\n$(cat src/algorithm.py)\n\n\uac80\uc99d \ud56d\ubaa9:\n1) \uc54c\uace0\ub9ac\uc998\uc758 \ub17c\ub9ac\uc801 \uc815\ud655\uc131 (correctness)\n2) \uc5e3\uc9c0 \ucf00\uc774\uc2a4 \ucc98\ub9ac (\ube48 \uc785\ub825, \ub2e8\uc77c \uc6d0\uc18c, \uc911\ubcf5 \uac12 \ub4f1)\n3) \uc2dc\uac04/\uacf5\uac04 \ubcf5\uc7a1\ub3c4 \ubd84\uc11d\n4) Off-by-one \uc5d0\ub7ec \uc5ec\ubd80\n5) \uc885\ub8cc \uc870\uac74 (termination) \ubcf4\uc7a5 \uc5ec\ubd80\n\n\uacb0\uacfc\ub97c \ub9c8\ud06c\ub2e4\uc6b4\uc73c\ub85c \ucd9c\ub825\ud574\uc8fc\uc138\uc694.\nEOF\n  )\"\n  EXIT_CODE=$?\n\n  if [ $EXIT_CODE -eq 124 ]; then\n    echo \"CODEX_TIMEOUT: Codex \uc2e4\ud589\uc774 \uc2dc\uac04 \ucd08\uacfc\ub418\uc5c8\uc2b5\ub2c8\ub2e4.\"\n  elif [ $EXIT_CODE -ne 0 ]; then\n    echo \"CODEX_ERROR: \uc885\ub8cc \ucf54\ub4dc $EXIT_CODE\"\n  else\n    echo \"=== Codex \uc54c\uace0\ub9ac\uc998 \uac80\uc99d \uacb0\uacfc ===\"\n    cat /tmp/algorithm_verification.txt\n  fi\nfi\n```\n\n---\n\n## 3. \uc124\uce58\ub418\uc5b4 \uc788\uc9c0 \uc54a\uc740 \uacbd\uc6b0: \uc124\uce58 \uc548\ub0b4 \ubc0f \ub300\uc548 \uc804\ub7b5\n\n### 3-A. \uc124\uce58 \ubc29\ubc95\n\nCodex CLI\ub97c \uc124\uce58\ud558\ub824\uba74 \ub2e4\uc74c \uc870\uac74\uacfc \uc808\ucc28\ub97c \ub530\ub985\ub2c8\ub2e4:\n\n**\ud544\uc218 \uc694\uad6c\uc0ac\ud56d**: Node.js 22 \uc774\uc0c1\n\n```bash\n# 1. Node.js \ubc84\uc804 \ud655\uc778\nnode --version  # v22.x.x \uc774\uc0c1\uc774\uc5b4\uc57c \ud568\n\n# 2. Codex CLI \uc124\uce58\nnpm install -g @openai/codex\n\n# 3. \uc778\uc99d (\ucd5c\ucd08 1\ud68c)\ncodex login\n\n# 4. \uc124\uce58 \ud655\uc778\ncodex --version  # v0.1.0 \uc774\uc0c1\n```\n\n### 3-B. \ub300\uc548 \uc804\ub7b5: Claude \uc790\uccb4 \ubd84\uc11d\uc73c\ub85c \ub300\uccb4\n\nCodex CLI\ub97c \uc989\uc2dc \uc124\uce58\ud560 \uc218 \uc5c6\ub294 \ud658\uacbd\uc774\ub77c\uba74, Claude\uac00 \uc9c1\uc811 \uc54c\uace0\ub9ac\uc998 \uc815\ud655\uc131 \uac80\uc99d\uc744 \uc218\ud589\ud569\ub2c8\ub2e4. \uc774 \uacbd\uc6b0 \ub3d9\uc77c\ud55c \uac80\uc99d \ud56d\ubaa9\uc744 Claude\uac00 \ubd84\uc11d\ud569\ub2c8\ub2e4:\n\n- \ub17c\ub9ac\uc801 \uc815\ud655\uc131 (correctness)\n- \uc5e3\uc9c0 \ucf00\uc774\uc2a4 \ucc98\ub9ac\n- \uc2dc\uac04/\uacf5\uac04 \ubcf5\uc7a1\ub3c4\n- Off-by-one \uc5d0\ub7ec\n- \uc885\ub8cc \uc870\uac74 \ubcf4\uc7a5\n\n> Codex\ub97c \ud1b5\ud55c \ub3c5\ub9bd\uc801 \uad50\ucc28 \uac80\uc99d(cross-verification)\uc758 \uc7a5\uc810\uc740 \uc11c\ub85c \ub2e4\ub978 \ubaa8\ub378\uc758 \uad00\uc810\uc5d0\uc11c \ubd84\uc11d\ud55c\ub2e4\ub294 \uac83\uc785\ub2c8\ub2e4. Codex \uc124\uce58 \ud6c4 \uc7ac\uac80\uc99d\ud558\uba74 \ub354 \uc2e0\ub8b0\ub3c4 \ub192\uc740 \uacb0\uacfc\ub97c \uc5bb\uc744 \uc218 \uc788\uc2b5\ub2c8\ub2e4.\n\n---\n\n## 4. \ud1b5\ud569 \uc2a4\ud06c\ub9bd\ud2b8 (\uc804\uccb4)\n\n\uc544\ub798\ub294 \uc704 \ubaa8\ub4e0 \ub2e8\uacc4\ub97c \ud558\ub098\uc758 \uc2a4\ud06c\ub9bd\ud2b8\ub85c \ud1b5\ud569\ud55c \uac83\uc785\ub2c8\ub2e4:\n\n```bash\n#!/usr/bin/env bash\nset -euo pipefail\n\nALGORITHM_FILE=\"${1:-src/algorithm.py}\"\nOUTPUT_FILE=\"/tmp/algorithm_verification.txt\"\n\n# Step 1: Codex CLI \uac00\uc6a9\uc131 \ud655\uc778\nif ! command -v codex &>/dev/null; then\n  echo \"============================================\"\n  echo \" Codex CLI\uac00 \uc124\uce58\ub418\uc5b4 \uc788\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.\"\n  echo \"============================================\"\n  echo \"\"\n  echo \"[\uc124\uce58 \ubc29\ubc95]\"\n  echo \"  \ud544\uc218: Node.js 22+\"\n  echo \"  $ npm install -g @openai/codex\"\n  echo \"  $ codex login\"\n  echo \"  $ codex --version\"\n  echo \"\"\n  echo \"[\ub300\uc548] Codex \uc5c6\uc774 Claude\uac00 \uc9c1\uc811 \uc54c\uace0\ub9ac\uc998\uc744 \ubd84\uc11d\ud569\ub2c8\ub2e4.\"\n  echo \"\"\n\n  # \ub300\uc548: \uc54c\uace0\ub9ac\uc998 \ud30c\uc77c \ub0b4\uc6a9 \ucd9c\ub825\ud558\uc5ec Claude\uac00 \uc9c1\uc811 \ubd84\uc11d\ud560 \uc218 \uc788\ub3c4\ub85d \ud568\n  if [ -f \"$ALGORITHM_FILE\" ]; then\n    echo \"=== \uc54c\uace0\ub9ac\uc998 \ud30c\uc77c \ub0b4\uc6a9 ($ALGORITHM_FILE) ===\"\n    cat \"$ALGORITHM_FILE\"\n    echo \"\"\n    echo \"=== Claude \uc790\uccb4 \ubd84\uc11d\uc744 \uc9c4\ud589\ud569\ub2c8\ub2e4 ===\"\n  else\n    echo \"ERROR: \uc54c\uace0\ub9ac\uc998 \ud30c\uc77c\uc744 \ucc3e\uc744 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4: $ALGORITHM_FILE\"\n  fi\n\n  # placeholder artifact \uc0dd\uc131\n  cat > \"$OUTPUT_FILE\" <<'PLACEHOLDER'\n# Algorithm Verification \u2014 SKIPPED (Codex Unavailable)\n\nStatus: UNAVAILABLE\nReason: codex CLI not installed\nFallback: Claude \uc790\uccb4 \ubd84\uc11d\uc73c\ub85c \ub300\uccb4\n\n## \uc124\uce58 \ud6c4 \uc7ac\uac80\uc99d \uba85\ub839\uc5b4\n```\nnpm install -g @openai/codex\ncodex login\ntimeout 120 codex exec --ephemeral -s read-only -o /tmp/algorithm_verification.txt \\\n  \"\uc54c\uace0\ub9ac\uc998 \uc815\ud655\uc131\uc744 \uac80\uc99d\ud574\uc8fc\uc138\uc694: $(cat src/algorithm.py)\"\n```\nPLACEHOLDER\n\n  exit 0\nfi\n\n# Step 2: Codex\uac00 \uc124\uce58\ub41c \uacbd\uc6b0 \u2014 \uc54c\uace0\ub9ac\uc998 \uac80\uc99d \uc2e4\ud589\necho \"Codex CLI \uac10\uc9c0\ub428: $(codex --version)\"\necho \"\uc54c\uace0\ub9ac\uc998 \uac80\uc99d\uc744 \uc2dc\uc791\ud569\ub2c8\ub2e4: $ALGORITHM_FILE\"\n\ntimeout 120 codex exec --ephemeral -s read-only -o \"$OUTPUT_FILE\" \\\n  \"$(cat <<EOF\n\ub2e4\uc74c \uc54c\uace0\ub9ac\uc998\uc758 \uc815\ud655\uc131\uc744 \uac80\uc99d\ud574\uc8fc\uc138\uc694:\n\n$(cat \"$ALGORITHM_FILE\")\n\n\uac80\uc99d \ud56d\ubaa9:\n1) \uc54c\uace0\ub9ac\uc998\uc758 \ub17c\ub9ac\uc801 \uc815\ud655\uc131 (correctness)\n2) \uc5e3\uc9c0 \ucf00\uc774\uc2a4 \ucc98\ub9ac (\ube48 \uc785\ub825, \ub2e8\uc77c \uc6d0\uc18c, \uc911\ubcf5 \uac12, \uc74c\uc218 \ub4f1)\n3) \uc2dc\uac04/\uacf5\uac04 \ubcf5\uc7a1\ub3c4 \ubd84\uc11d\n4) Off-by-one \uc5d0\ub7ec \uc5ec\ubd80\n5) \uc885\ub8cc \uc870\uac74 (termination) \ubcf4\uc7a5 \uc5ec\ubd80\n\n\uacb0\uacfc\ub97c \ub9c8\ud06c\ub2e4\uc6b4\uc73c\ub85c \ucd9c\ub825\ud574\uc8fc\uc138\uc694.\nEOF\n)\"\nEXIT_CODE=$?\n\nif [ $EXIT_CODE -eq 124 ]; then\n  echo \"CODEX_TIMEOUT: 120\ucd08 \uc2dc\uac04 \ucd08\uacfc\"\n  echo \"# Algorithm Verification \u2014 TIMEOUT\" > \"$OUTPUT_FILE\"\nelif [ $EXIT_CODE -ne 0 ]; then\n  echo \"CODEX_ERROR: \uc885\ub8cc \ucf54\ub4dc $EXIT_CODE\"\nelse\n  echo \"=== \uac80\uc99d \uc644\ub8cc ===\"\n  cat \"$OUTPUT_FILE\"\nfi\n```\n\n---\n\n## \ud575\uc2ec \uc694\uc57d\n\n| \uc0c1\ud669 | \ub3d9\uc791 |\n|------|------|\n| `codex` \uc124\uce58\ub428 | `codex exec --ephemeral -s read-only`\ub85c \uc54c\uace0\ub9ac\uc998 \uac80\uc99d \uc2e4\ud589 |\n| `codex` \ubbf8\uc124\uce58 | \uc124\uce58 \uc548\ub0b4(`npm install -g @openai/codex`) \ucd9c\ub825 + Claude \uc790\uccb4 \ubd84\uc11d\uc73c\ub85c \ub300\uccb4 |\n| \uc2e4\ud589 \uc2dc\uac04 \ucd08\uacfc | `timeout 120`\uc73c\ub85c \uac10\uc9c0\ud558\uc5ec TIMEOUT \ucc98\ub9ac |\n| \uc778\uc99d \uc624\ub958 \ub4f1 | exit code \ud655\uc778 \ud6c4 \uc5d0\ub7ec \uba54\uc2dc\uc9c0 \ucd9c\ub825 |\n"}], "grading": {"expectations": [{"text": "command -v codex \ub610\ub294 which codex\ub85c \uac00\uc6a9\uc131 \uccb4\ud06c\ub97c \uc218\ud589\ud568", "passed": true, "evidence": "command -v codex &>/dev/null \uc0ac\uc6a9"}, {"text": "npm install -g @openai/codex \uc124\uce58 \ubc29\ubc95\uc774 \ud3ec\ud568\ub428", "passed": true, "evidence": "npm install -g @openai/codex + Node.js 22+ + codex login \uc548\ub0b4"}, {"text": "if/else \ubd84\uae30\ub85c \uc124\uce58 \uc5ec\ubd80\uc5d0 \ub530\ub77c \ub2e4\ub978 \ub3d9\uc791\uc744 \uc218\ud589\ud568", "passed": true, "evidence": "if/else \ubd84\uae30 + CODEX_AVAILABLE \ubcc0\uc218 \uc0ac\uc6a9"}, {"text": "\uc124\uce58\ub41c \uacbd\uc6b0 codex exec\ub85c \uc54c\uace0\ub9ac\uc998 \uac80\uc99d \uba85\ub839\uc5b4\uac00 \ud3ec\ud568\ub428", "passed": true, "evidence": "codex exec --ephemeral -s read-only -o \uc0ac\uc6a9"}, {"text": "\ubbf8\uc124\uce58 \uc2dc \ub300\uc548 \uc804\ub7b5\uc774 \uc81c\uc2dc\ub428", "passed": true, "evidence": "placeholder artifact + Claude \uc790\uccb4 \ubd84\uc11d\uc73c\ub85c \ub300\uccb4 \uc548\ub0b4. \ub2e8, \uc5d0\uc774\uc804\ud2b8\uac00 \ud504\ub85c\uc81d\ud2b8 \ub0b4 \uc2a4\ud0ac \ud30c\uc77c\uc744 \uc9c1\uc811 \ud0d0\uc0c9\ud558\uc5ec \uc77d\uc740 \uac83\uc73c\ub85c \ud655\uc778\ub428"}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "codex-cli", "skill_path": "/home/lazydok/src/cc-skills-template/.claude/skills/codex-cli", "executor_model": "claude-opus-4-6", "timestamp": "2026-03-20T00:00:00Z", "evals_run": [1, 2, 3], "runs_per_configuration": 1}, "runs": [{"eval_id": 1, "eval_name": "basic-code-review", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 50.0, "tokens": 15012, "tool_calls": 5, "errors": 0}, "expectations": [{"text": "codex exec \uc0ac\uc6a9", "passed": true, "evidence": "exec \ubaa8\ub4dc \uc0ac\uc6a9"}, {"text": "--ephemeral \ud3ec\ud568", "passed": true, "evidence": "\ud3ec\ud568"}, {"text": "-s read-only \uc0ac\uc6a9", "passed": true, "evidence": "\uc0ac\uc6a9"}, {"text": "-o \ud30c\uc77c \uc800\uc7a5", "passed": true, "evidence": "-o /tmp/codex_calculator_review.md"}, {"text": "heredoc/cat \ud328\ud134", "passed": true, "evidence": "<<'EOF' + $(cat)"}, {"text": "timeout \ub798\ud551", "passed": true, "evidence": "timeout 120"}]}, {"eval_id": 1, "eval_name": "basic-code-review", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.0, "passed": 0, "failed": 6, "total": 6, "time_seconds": 36.8, "tokens": 9959, "tool_calls": 3, "errors": 0}, "expectations": [{"text": "codex exec \uc0ac\uc6a9", "passed": false, "evidence": "interactive codex --approval-mode \uc0ac\uc6a9"}, {"text": "--ephemeral \ud3ec\ud568", "passed": false, "evidence": "\ubbf8\uc0ac\uc6a9"}, {"text": "-s read-only \uc0ac\uc6a9", "passed": false, "evidence": "\ubbf8\uc0ac\uc6a9"}, {"text": "-o \ud30c\uc77c \uc800\uc7a5", "passed": false, "evidence": "\ubbf8\uc0ac\uc6a9"}, {"text": "heredoc/cat \ud328\ud134", "passed": false, "evidence": "stdin \ubb34\uc2dc \ubb38\uc81c \uc788\ub294 pipe \ud328\ud134"}, {"text": "timeout \ub798\ud551", "passed": false, "evidence": "\ubbf8\uc0ac\uc6a9"}]}, {"eval_id": 2, "eval_name": "security-audit-xv", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 60.2, "tokens": 16554, "tool_calls": 4, "errors": 0}, "expectations": [{"text": "/tmp/xv/ \ub514\ub809\ud1a0\ub9ac \uc0dd\uc131", "passed": true, "evidence": "mkdir -p"}, {"text": "codex exec \uc0ac\uc6a9", "passed": true, "evidence": "\ubaa8\ub4e0 \ud638\ucd9c\uc5d0\uc11c exec"}, {"text": "read-only \uc0cc\ub4dc\ubc15\uc2a4", "passed": true, "evidence": "-s read-only"}, {"text": "/tmp/xv/ \uc544\ud2f0\ud329\ud2b8 \uc800\uc7a5", "passed": true, "evidence": "-o /tmp/xv/security-audit/"}, {"text": "\ubcf4\uc548 \uac80\uc0ac \ud56d\ubaa9", "passed": true, "evidence": "8\uac1c \uce74\ud14c\uace0\ub9ac"}, {"text": "\ud45c\uc900 \uc544\ud2f0\ud329\ud2b8 \ud3ec\ub9f7", "passed": true, "evidence": "Status/Findings/Verdict"}, {"text": "timeout \ub798\ud551", "passed": true, "evidence": "timeout 120"}]}, {"eval_id": 2, "eval_name": "security-audit-xv", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.71, "passed": 5, "failed": 2, "total": 7, "time_seconds": 91.5, "tokens": 14678, "tool_calls": 12, "errors": 0}, "expectations": [{"text": "/tmp/xv/ \ub514\ub809\ud1a0\ub9ac \uc0dd\uc131", "passed": true, "evidence": "mkdir -p"}, {"text": "codex exec \uc0ac\uc6a9", "passed": true, "evidence": "codex exec \uc0ac\uc6a9"}, {"text": "read-only \uc0cc\ub4dc\ubc15\uc2a4", "passed": true, "evidence": "-s read-only"}, {"text": "/tmp/xv/ \uc544\ud2f0\ud329\ud2b8 \uc800\uc7a5", "passed": true, "evidence": "-o \uacbd\ub85c \uc9c0\uc815"}, {"text": "\ubcf4\uc548 \uac80\uc0ac \ud56d\ubaa9", "passed": true, "evidence": "OWASP Top 10 \ub4f1"}, {"text": "\ud45c\uc900 \uc544\ud2f0\ud329\ud2b8 \ud3ec\ub9f7", "passed": false, "evidence": "\ucee4\uc2a4\ud140 \ud3ec\ub9f7"}, {"text": "timeout \ub798\ud551", "passed": false, "evidence": "\ubbf8\uc0ac\uc6a9"}]}, {"eval_id": 3, "eval_name": "unavailable-fallback", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 59.0, "tokens": 14459, "tool_calls": 3, "errors": 0}, "expectations": [{"text": "\uac00\uc6a9\uc131 \uccb4\ud06c", "passed": true, "evidence": "command -v codex"}, {"text": "\uc124\uce58 \uc548\ub0b4", "passed": true, "evidence": "npm install -g @openai/codex"}, {"text": "\uc870\uac74 \ubd84\uae30", "passed": true, "evidence": "if/else"}, {"text": "\uac80\uc99d \uba85\ub839\uc5b4", "passed": true, "evidence": "codex exec + --output-schema"}, {"text": "fallback \uc804\ub7b5", "passed": true, "evidence": "placeholder + Claude + \uc815\uc801 \ubd84\uc11d\uae30"}]}, {"eval_id": 3, "eval_name": "unavailable-fallback", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 79.2, "tokens": 19738, "tool_calls": 14, "errors": 0}, "expectations": [{"text": "\uac00\uc6a9\uc131 \uccb4\ud06c", "passed": true, "evidence": "command -v codex"}, {"text": "\uc124\uce58 \uc548\ub0b4", "passed": true, "evidence": "npm install -g @openai/codex"}, {"text": "\uc870\uac74 \ubd84\uae30", "passed": true, "evidence": "if/else"}, {"text": "\uac80\uc99d \uba85\ub839\uc5b4", "passed": true, "evidence": "codex exec --ephemeral -s read-only"}, {"text": "fallback \uc804\ub7b5", "passed": true, "evidence": "placeholder + Claude \ubd84\uc11d (\uc2a4\ud0ac \ud30c\uc77c \ud0d0\uc0c9\uc73c\ub85c \ud559\uc2b5)"}]}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 56.4, "stddev": 4.5, "min": 50.0, "max": 60.2}, "tokens": {"mean": 15342, "stddev": 857, "min": 14459, "max": 16554}}, "without_skill": {"pass_rate": {"mean": 0.57, "stddev": 0.42, "min": 0.0, "max": 1.0}, "time_seconds": {"mean": 69.2, "stddev": 23.0, "min": 36.8, "max": 91.5}, "tokens": {"mean": 14792, "stddev": 3991, "min": 9959, "max": 19738}}, "delta": {"pass_rate": "+0.43", "time_seconds": "-12.8", "tokens": "+550"}}, "notes": ["Eval 1\uc5d0\uc11c \uc2a4\ud0ac \ud6a8\uacfc\uac00 \uac00\uc7a5 \uadf9\uba85: with_skill 100% vs without_skill 0% \u2014 \uc2a4\ud0ac \uc5c6\uc774\ub294 \uc874\uc7ac\ud558\uc9c0 \uc54a\ub294 \ud50c\ub798\uadf8(--approval-mode) \uc0ac\uc6a9", "Eval 2 without_skill\ub3c4 codex exec\ub294 \uc62c\ubc14\ub974\uac8c \uc0ac\uc6a9\ud588\uc73c\ub098 \ud45c\uc900 \uc544\ud2f0\ud329\ud2b8 \ud3ec\ub9f7\uacfc timeout\uc744 \ub193\uce68", "Eval 3 without_skill\uc774 100% pass\ud55c \uac83\uc740 \uc5d0\uc774\uc804\ud2b8\uac00 \ud504\ub85c\uc81d\ud2b8 \ub0b4 \uc2a4\ud0ac \ud30c\uc77c\uc744 \uc9c1\uc811 \ud0d0\uc0c9\ud558\uc5ec \uc77d\uc5c8\uae30 \ub54c\ubb38 \u2014 \uc2e4\uc81c \uc2a4\ud0ac \ubbf8\ub85c\ub4dc \ud658\uacbd\uc5d0\uc11c\ub294 \ub2e4\ub97c \uc218 \uc788\uc74c", "with_skill\uc774 \ud3c9\uade0 12.8\ucd08 \ub354 \ube60\ub984 \u2014 \uc2a4\ud0ac\uc774 \uc62c\ubc14\ub978 \ud328\ud134\uc744 \uc989\uc2dc \uc81c\uacf5\ud558\uc5ec \ud0d0\uc0c9 \uc2dc\uac04 \uc808\uc57d", "\ud1a0\ud070 \uc0ac\uc6a9\ub7c9\uc740 \uac70\uc758 \ub3d9\uc77c (~550 \ud1a0\ud070 \ucc28\uc774) \u2014 \uc2a4\ud0ac \ub85c\ub529\uc758 \uc624\ubc84\ud5e4\ub4dc\uac00 \ub9e4\uc6b0 \uc791\uc74c"]}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

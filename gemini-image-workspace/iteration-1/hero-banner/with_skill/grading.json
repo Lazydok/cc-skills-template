@@ -1,0 +1,26 @@
+{
+  "eval_name": "hero-banner",
+  "variant": "with_skill",
+  "expectations": [
+    {
+      "text": "image-file-created",
+      "passed": true,
+      "evidence": "hero-banner.png (917 KB) created"
+    },
+    {
+      "text": "aspect-ratio-set",
+      "passed": true,
+      "evidence": "16:9 aspect ratio used (banner is wide format)"
+    },
+    {
+      "text": "high-res-set",
+      "passed": true,
+      "evidence": "2K size parameter was specified"
+    },
+    {
+      "text": "correct-output-path",
+      "passed": true,
+      "evidence": "Image saved to outputs/hero-banner.png"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "eval_id": 3,
+  "eval_name": "multi-thumbnail",
+  "prompt": "블로그 포스트 썸네일 3개 변형을 만들어줘. 'AI와 미래' 주제로 모던한 느낌. thumbnails/ai-future.png로 저장해줘",
+  "assertions": [
+    {"name": "multiple-images-created", "check": "output directory contains 3 image files"},
+    {"name": "count-param-used", "check": "command included -n 3 flag"},
+    {"name": "correct-output-path", "check": "images were saved to the specified outputs directory"}
+  ]
+}

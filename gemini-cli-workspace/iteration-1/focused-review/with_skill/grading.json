@@ -1,0 +1,42 @@
+{
+  "eval_id": 3,
+  "eval_name": "focused-review",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "gemini CLI가 실제로 실행되었음",
+      "passed": true,
+      "evidence": "gemini CLI 실행 성공"
+    },
+    {
+      "text": "-p 플래그와 -o 플래그를 사용함",
+      "passed": true,
+      "evidence": "-p ... -o text 2>/dev/null 사용"
+    },
+    {
+      "text": "test_sample.py 코드가 stdin 또는 프롬프트에 포함되어 전달됨",
+      "passed": true,
+      "evidence": "cat test_sample.py | gemini -y -p ... 패턴으로 stdin 전달"
+    },
+    {
+      "text": "프롬프트에 SQL injection과 캐시 이슈에 집중하라는 지시가 포함됨",
+      "passed": true,
+      "evidence": "Focus especially on: 1) SQL injection vulnerabilities 2) Cache issues"
+    },
+    {
+      "text": "리뷰 결과에서 SQL injection 취약점을 식별함",
+      "passed": true,
+      "evidence": "CRITICAL: SQL injection in get_user_orders via f-string interpolation"
+    },
+    {
+      "text": "리뷰 결과에서 캐시 관련 이슈를 식별함",
+      "passed": true,
+      "evidence": "HIGH: 캐시 메모리 누수, MEDIUM: thread safety 미보장"
+    },
+    {
+      "text": "리뷰 결과가 파일로 저장됨",
+      "passed": true,
+      "evidence": "gemini_review.md (79 lines) 저장"
+    }
+  ]
+}

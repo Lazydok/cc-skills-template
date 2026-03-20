@@ -1,0 +1,37 @@
+{
+  "eval_id": 2,
+  "eval_name": "web-search",
+  "prompt": "gemini로 웹 검색해서 Node.js 22 LTS의 주요 변경사항이 뭔지 알려줘",
+  "assertions": [
+    {
+      "id": "gemini-invoked",
+      "text": "gemini CLI가 실제로 실행되었음",
+      "type": "required"
+    },
+    {
+      "id": "web-search-prompt",
+      "text": "프롬프트에 웹 검색 의도가 포함됨 (search/검색 관련 키워드)",
+      "type": "required"
+    },
+    {
+      "id": "used-headless-flags",
+      "text": "-p 플래그와 -o 플래그를 사용함",
+      "type": "required"
+    },
+    {
+      "id": "used-yolo-flag",
+      "text": "-y 플래그를 사용하여 google_web_search 도구 자동 승인",
+      "type": "required"
+    },
+    {
+      "id": "output-contains-nodejs-info",
+      "text": "출력에 Node.js 22 관련 정보가 포함됨",
+      "type": "required"
+    },
+    {
+      "id": "result-saved",
+      "text": "검색 결과가 파일로 저장됨",
+      "type": "required"
+    }
+  ]
+}

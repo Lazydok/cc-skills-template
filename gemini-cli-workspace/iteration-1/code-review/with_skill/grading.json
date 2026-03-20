@@ -1,0 +1,42 @@
+{
+  "eval_id": 1,
+  "eval_name": "code-review",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "gemini CLI가 실제로 실행되었음",
+      "passed": true,
+      "evidence": "transcript에서 gemini CLI를 두 번 실행 (1차 timeout, 2차 성공)"
+    },
+    {
+      "text": "timeout 명령어로 gemini 호출을 감쌌음",
+      "passed": true,
+      "evidence": "timeout 120으로 감쌈. 스킬 가이드를 따름."
+    },
+    {
+      "text": "-p 플래그와 -o text 플래그를 사용함",
+      "passed": true,
+      "evidence": "-p 'review...' -o text 2>/dev/null 사용"
+    },
+    {
+      "text": "-y 플래그를 사용하여 도구 자동 승인",
+      "passed": true,
+      "evidence": "-y 플래그 사용 확인"
+    },
+    {
+      "text": "2>/dev/null로 stderr를 억제함",
+      "passed": true,
+      "evidence": "2>/dev/null 사용 확인"
+    },
+    {
+      "text": "gemini의 리뷰 결과가 파일로 저장됨",
+      "passed": true,
+      "evidence": "gemini_review.md (31 lines) 저장"
+    },
+    {
+      "text": "리뷰 결과에서 코드의 버그를 1개 이상 식별함",
+      "passed": true,
+      "evidence": "6개 이슈 식별: SQL injection(CRITICAL), 캐시 메모리 누수(HIGH), 할인 로직(MEDIUM) 등"
+    }
+  ]
+}

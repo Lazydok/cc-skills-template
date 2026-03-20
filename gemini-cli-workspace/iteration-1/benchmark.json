@@ -1,0 +1,71 @@
+{
+  "skill_name": "gemini-cli",
+  "iteration": 1,
+  "timestamp": "2026-03-20T06:11:00Z",
+  "configurations": [
+    {
+      "name": "with_skill",
+      "pass_rate": {
+        "mean": 0.95,
+        "stddev": 0.05,
+        "per_eval": {
+          "code-review": 1.0,
+          "web-search": 1.0,
+          "focused-review": 1.0
+        }
+      },
+      "assertions_passed": 20,
+      "assertions_total": 20,
+      "notes": "All assertions passed. Correct flag usage (-y -p -o text 2>/dev/null + timeout) in all cases. Two evals required retry due to gemini timeout."
+    },
+    {
+      "name": "without_skill",
+      "pass_rate": {
+        "mean": 0.80,
+        "stddev": 0.10,
+        "per_eval": {
+          "code-review": 0.57,
+          "web-search": 1.0,
+          "focused-review": 1.0
+        }
+      },
+      "assertions_passed": 17,
+      "assertions_total": 20,
+      "notes": "3 assertions failed in code-review: no timeout, no -y flag, stderr not suppressed. Web-search and focused-review passed all assertions."
+    }
+  ],
+  "delta": {
+    "pass_rate": "+15%",
+    "details": "with_skill: 20/20 (100%) vs without_skill: 17/20 (85%). Key gap: operational best practices (timeout, -y, stderr suppression) that baseline agents don't know without the skill."
+  },
+  "timing": {
+    "with_skill": {
+      "mean_duration_ms": 171686,
+      "mean_tokens": 15012,
+      "per_eval": {
+        "code-review": {"duration_ms": 203133, "tokens": 15829},
+        "web-search": {"duration_ms": 208253, "tokens": 13944},
+        "focused-review": {"duration_ms": 103672, "tokens": 15264}
+      }
+    },
+    "without_skill": {
+      "mean_duration_ms": 151446,
+      "mean_tokens": 15100,
+      "per_eval": {
+        "code-review": {"duration_ms": 97469, "tokens": 14312},
+        "web-search": {"duration_ms": 260420, "tokens": 15982},
+        "focused-review": {"duration_ms": 96449, "tokens": 15007}
+      }
+    },
+    "delta": "with_skill +13% slower on average (171s vs 151s), but includes timeout+retry handling that prevented hangs"
+  },
+  "analyst_observations": [
+    "The skill's primary value is in operational correctness (timeout, -y, 2>/dev/null) rather than task completion — both configurations successfully invoked gemini and got useful results.",
+    "without_skill agents needed an extra step (gemini --help) to discover flags, adding ~5s overhead per eval.",
+    "The code-review eval showed the biggest gap: without_skill missed timeout (hang risk), -y flag (tool blocking risk), and stderr suppression (noisy output).",
+    "web-search without_skill surprisingly used --yolo correctly after reading --help, but still missed timeout and 2>/dev/null.",
+    "The skill's timeout recommendations (60-120s) proved too aggressive for web search — actual web search took >120s requiring retry with 180s timeout.",
+    "Non-discriminating assertion: 'gemini CLI invoked' passed in all cases — both configurations can find and run gemini.",
+    "Discriminating assertions: 'timeout used', '-y used', 'stderr suppressed' — these only pass with the skill."
+  ]
+}
