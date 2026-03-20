@@ -14,7 +14,20 @@ description: >
 
 Invoke OpenAI Codex CLI in exec mode as a sub-agent for independent code analysis.
 
-**Auth**: ChatGPT login (cached). **Binary**: `codex` (latest recommended).
+## Prerequisites
+
+**Install**: `npm install -g @openai/codex` (requires Node.js 22+)
+**Auth**: `codex login` — authenticates via ChatGPT browser login (cached after first use)
+**Verify**: `codex --version` (minimum v0.1.0+)
+
+Before invoking Codex in scripts or teammate prompts, always check availability:
+
+```bash
+if ! command -v codex &>/dev/null; then
+  echo "codex CLI not installed. Install: npm install -g @openai/codex"
+  exit 1
+fi
+```
 
 ## Core Invocation Patterns
 
@@ -78,9 +91,20 @@ EOF
 cat /tmp/result.txt
 ```
 
-**Critical**: Stdin is SILENTLY IGNORED when a prompt arg is given. Always embed code in the prompt string via heredoc or `$(cat file)`.
+**Critical**: When a prompt argument is given, stdin is silently ignored. Always embed code in the prompt string via heredoc or `$(cat file)`. To read from stdin instead, omit the positional argument or pass `-` as the prompt.
 
-### Pattern 5: Low-Cost Quick Query
+### Pattern 5: Image-Assisted Review
+
+```bash
+codex exec --ephemeral -s read-only \
+  -i /tmp/screenshots/error_screenshot.png \
+  -o /tmp/result.txt \
+  "This screenshot shows a UI rendering bug. What CSS/layout issues could cause this?"
+```
+
+`-i/--image` attaches images to the prompt. Useful for visual bug reports, UI review, and diagram analysis. Multiple images supported: `-i img1.png -i img2.png`.
+
+### Pattern 6: Low-Cost Quick Query
 
 ```bash
 codex exec --ephemeral -s read-only \
@@ -88,6 +112,16 @@ codex exec --ephemeral -s read-only \
   -o /tmp/result.txt \
   "Quick: is this function O(n) or O(n^2)? $(cat algo.py)"
 ```
+
+### Pattern 7: With Timeout (Recommended for Sub-Agent Use)
+
+```bash
+timeout 120 codex exec --ephemeral -s read-only -o /tmp/result.txt \
+  "Review this code for security issues: $(cat src/auth.py)" \
+  || echo "CODEX_TIMEOUT"
+```
+
+Always wrap with `timeout` when invoking from a teammate or script — Codex can hang on large files or complex prompts.
 
 ## Key Flags
 
@@ -100,7 +134,9 @@ codex exec --ephemeral -s read-only \
 | `--json` | JSONL events to stdout (for programmatic parsing) |
 | `--output-schema FILE` | Enforce JSON Schema on response |
 | `-c key=value` | Config override (e.g., `model_reasoning_effort="low"`) |
-| `--full-auto` | Auto-approve + workspace-write sandbox (use for write tasks only, NOT with `-s read-only`) |
+| `-i FILE` | Attach image(s) to prompt (repeatable) |
+| `-p PROFILE` | Use named config profile from config.toml |
+| `--full-auto` | Auto-approve + workspace-write sandbox — do NOT combine with `-s read-only` (it overrides sandbox to workspace-write) |
 
 ## JSONL Output Parsing (`--json`)
 
@@ -131,27 +167,36 @@ Key event types in JSONL:
 A teammate invokes Codex for cross-verification via Bash tool:
 
 ```bash
-codex exec --ephemeral -s read-only -o /tmp/codex_review.md \
-  "$(cat <<'PROMPT'
+# Always check availability first
+if ! command -v codex &>/dev/null; then
+  echo "CODEX_NOT_AVAILABLE: skipping cross-verification"
+  # Write a placeholder artifact so synthesizer knows Codex was unavailable
+  echo "# Codex Review — SKIPPED\nStatus: UNAVAILABLE\nReason: codex CLI not installed" \
+    > /tmp/codex_review.md
+else
+  timeout 120 codex exec --ephemeral -s read-only -o /tmp/codex_review.md \
+    "$(cat <<'PROMPT'
 Review this implementation for correctness, edge cases, and security:
 
 $(cat src/feature.py)
 
 Output as markdown with severity levels: [CRITICAL/HIGH/MEDIUM/LOW]
 PROMPT
-)"
+  )" || echo "# Codex Review — TIMEOUT" > /tmp/codex_review.md
+fi
 CODEX_REVIEW=$(cat /tmp/codex_review.md)
 ```
 
 ## Limitations
 
-- **Stdin ignored with prompt arg** — Must embed code in prompt string (heredoc pattern)
+- **Stdin ignored with prompt arg** — Must embed code in prompt string (heredoc pattern), or omit the positional arg and pass `-` to read from stdin
 - **CLAUDE.md always read** — ~5K tokens consumed per call automatically
 - **MCP startup overhead** — ~2-3s per call for configured MCP servers
 - **No separate context channel** — Code must be embedded in the prompt itself
-- **Exit code 0 even on model errors** — Model handles shell failures internally
+- **Exit code 0 even on model errors** — Model handles shell failures internally; wrap with `timeout` to catch hangs
+- **`--full-auto` overrides sandbox** — If you need read-only safety, do NOT use `--full-auto`; it forces `workspace-write`
 
 ## Detailed Reference
 
-- **[references/invocation-patterns.md](references/invocation-patterns.md)** — Full exec flags, review mode details, sandbox permissions, MCP server mode
+- **[references/invocation-patterns.md](references/invocation-patterns.md)** — Full exec flags, review mode details, sandbox permissions, MCP server mode, error handling
 - **[references/review-patterns.md](references/review-patterns.md)** — Code review prompts, security audit templates, test gap analysis patterns

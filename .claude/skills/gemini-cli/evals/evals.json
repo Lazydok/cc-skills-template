@@ -1,0 +1,23 @@
+{
+  "skill_name": "gemini-cli",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Get a code review from gemini on this. It's gemini-cli-workspace/test_sample.py — check for bugs and security issues",
+      "expected_output": "Invokes Gemini CLI to review the code and presents identified bugs and security issues",
+      "files": ["gemini-cli-workspace/test_sample.py"]
+    },
+    {
+      "id": 2,
+      "prompt": "Use gemini to do a web search and tell me what the major changes are in Node.js 22 LTS",
+      "expected_output": "Uses Gemini CLI's google_web_search capability to search for and summarize Node.js 22 LTS information",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I want a second opinion from gemini on this Python code. Have it focus specifically on SQL injection issues and caching problems. gemini-cli-workspace/test_sample.py",
+      "expected_output": "Invokes Gemini CLI to provide a review focused on SQL injection and caching issues",
+      "files": ["gemini-cli-workspace/test_sample.py"]
+    }
+  ]
+}

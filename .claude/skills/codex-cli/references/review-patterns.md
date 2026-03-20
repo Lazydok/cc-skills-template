@@ -51,6 +51,39 @@ codex exec --ephemeral -s read-only -o /tmp/gaps.md \
    Format as checklist."
 ```
 
+### Visual Bug Report (Image Input)
+```bash
+codex exec --ephemeral -s read-only \
+  -i /tmp/screenshots/bug_screenshot.png \
+  -o /tmp/visual_review.md \
+  "$(cat <<'EOF'
+This screenshot shows a UI rendering issue reported by a user.
+
+Analyze the screenshot and review the related component code:
+
+$(cat src/components/Dashboard.tsx)
+
+Identify:
+1. What visual issue is shown in the screenshot
+2. Which CSS/layout properties could cause this
+3. Suggested fix with code snippet
+EOF
+)"
+```
+
+### Branch Review with Custom Focus
+```bash
+# Review only security-related changes in a PR
+codex exec review --base main --ephemeral --json \
+  -o /tmp/security_review.txt \
+  "Focus exclusively on security implications:
+   1. New attack surfaces introduced
+   2. Authentication/authorization changes
+   3. Input validation on new endpoints
+   4. Secrets or credentials handling
+   Ignore style, naming, and documentation issues."
+```
+
 ## Structured Output Schemas
 
 ### Bug Report Schema
@@ -97,10 +130,12 @@ codex exec --ephemeral -s read-only -o /tmp/gaps.md \
 
 ## Cross-Verification Template
 
-For agent-teams cross-verification, use this standard prompt:
+For agent-teams cross-verification, use this standard prompt. Set `TARGET_FILE` to the file path before invoking:
 
 ```bash
-codex exec --ephemeral -s read-only -o /tmp/codex_review.md \
+TARGET_FILE="src/services/order_processor.py"
+
+timeout 120 codex exec --ephemeral -s read-only -o /tmp/codex_review.md \
   "$(cat <<'PROMPT'
 You are performing an independent code review for cross-verification.
 Another AI has already reviewed this code. Your job is to provide an independent perspective.
@@ -121,5 +156,38 @@ For each finding:
 
 End with a summary: APPROVE / APPROVE_WITH_COMMENTS / REQUEST_CHANGES
 PROMPT
-)"
+)" || echo "# Codex Review — TIMEOUT" > /tmp/codex_review.md
+```
+
+## Multi-File Cross-Verification (Parallel)
+
+When reviewing multiple files, run Codex in parallel for speed:
+
+```bash
+mkdir -p /tmp/xv/review/
+
+# Launch reviews in parallel
+for FILE in src/auth/middleware.py src/api/routes.py tests/test_auth.py; do
+  BASENAME=$(basename "$FILE" .py)
+  timeout 120 codex exec --ephemeral -s read-only \
+    -o "/tmp/xv/review/codex_${BASENAME}.md" \
+    "$(cat <<PROMPT
+Independent code review of $FILE for cross-verification.
+
+$(cat "$FILE")
+
+Format: # Codex Review — $BASENAME
+Status: PASS | FAIL | PASS_WITH_COMMENTS
+## Findings
+- [SEVERITY] Line N: Description
+## Verdict: APPROVE | REQUEST_CHANGES
+PROMPT
+  )" &
+done
+
+# Wait for all with overall timeout
+wait
+
+# Verify all artifacts
+ls -la /tmp/xv/review/codex_*.md
 ```

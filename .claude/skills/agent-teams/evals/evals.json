@@ -3,46 +3,46 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "프로젝트의 src/api/와 src/services/ 디렉토리에 새로운 사용자 인증 API를 추가해줘. JWT 토큰 기반으로 login, register, refresh 엔드포인트 3개 만들고, 각각에 대한 유닛 테스트도 작성해줘. TypeScript로 작성하고 Express 프레임워크 사용.",
-      "expected_output": "TeamCreate로 팀을 생성하고, 최소 3명 이상의 teammate를 Agent(team_name=..., name=...) 형태로 스폰. API 개발, 서비스 로직, 테스트를 분리된 teammate가 담당. 파일 소유권이 분리되어야 함.",
+      "prompt": "Add a new user authentication API to the project's src/api/ and src/services/ directories. Create 3 endpoints for login, register, and refresh using JWT token-based auth, and write unit tests for each. Use TypeScript with the Express framework.",
+      "expected_output": "Create a team with TeamCreate and spawn at least 3 teammates using Agent(team_name=..., name=...). API development, service logic, and tests should be handled by separate teammates. File ownership must be divided.",
       "files": [],
       "expectations": [
-        "TeamCreate가 먼저 호출되어 팀이 생성됨",
-        "모든 Agent 호출에 team_name 파라미터가 포함됨",
-        "모든 Agent 호출에 name 파라미터가 포함됨",
-        "최소 3명의 teammate가 스폰됨 (API, service, test 분리)",
-        "각 teammate의 prompt에 구체적인 파일 경로와 작업 내용이 포함됨",
-        "테스트 전담 teammate가 존재함",
-        "teammate 간 파일 소유권이 겹치지 않음"
+        "TeamCreate is called first to create the team",
+        "All Agent calls include the team_name parameter",
+        "All Agent calls include the name parameter",
+        "At least 3 teammates are spawned (separate API, service, and test roles)",
+        "Each teammate's prompt includes specific file paths and task details",
+        "A dedicated test teammate exists",
+        "File ownership does not overlap between teammates"
       ]
     },
     {
       "id": 2,
-      "prompt": "우리 앱에서 주문 처리 로직에 버그가 있어. 사용자가 주문하면 가끔 금액이 잘못 계산돼. src/services/order_processor.py, src/models/order.py, src/api/handlers/orders.py 이 세 파일을 조사해서 원인을 찾아줘.",
-      "expected_output": "디버깅 팀을 구성하여 각 파일/모듈을 병렬로 조사. Explore 타입 teammate를 활용하여 읽기 전용 조사 수행. 가설별로 teammate를 분배하고 결과를 공유.",
+      "prompt": "There's a bug in our app's order processing logic. When users place an order, the amount is sometimes calculated incorrectly. Investigate these three files to find the root cause: src/services/order_processor.py, src/models/order.py, src/api/handlers/orders.py",
+      "expected_output": "Form a debugging team to investigate each file/module in parallel. Use Explore-type teammates for read-only investigation. Distribute teammates by hypothesis and share findings.",
       "files": [],
       "expectations": [
-        "TeamCreate가 호출됨",
-        "모든 Agent 호출에 team_name과 name이 포함됨",
-        "Explore subagent_type을 사용하는 teammate가 최소 1명 존재",
-        "조사 대상 파일(order_processor.py, order.py, orders.py)이 teammate prompt에 명시됨",
-        "teammate 간 SendMessage를 통한 findings 공유가 설계에 포함됨",
-        "최종 결과를 종합하는 과정이 포함됨"
+        "TeamCreate is called",
+        "All Agent calls include team_name and name",
+        "At least one teammate uses the Explore subagent_type",
+        "The target files (order_processor.py, order.py, orders.py) are specified in teammate prompts",
+        "The design includes sharing findings between teammates via SendMessage",
+        "A process for synthesizing the final results is included"
       ]
     },
     {
       "id": 3,
-      "prompt": "이 PR의 코드를 리뷰해줘. 보안, 성능, 정확성 관점에서 종합적으로 검토하고, Codex로도 크로스 검증해줘. 변경 파일: src/auth/middleware.py, src/api/routes.py, tests/test_auth.py",
-      "expected_output": "코드 리뷰 팀을 구성하여 보안/성능/정확성 각 관점별 reviewer + Codex cross-verification teammate + synthesizer. /tmp/xv/ 아티팩트 패턴 사용.",
+      "prompt": "Review the code in this PR. Conduct a comprehensive review from security, performance, and correctness perspectives, and cross-verify with Codex as well. Changed files: src/auth/middleware.py, src/api/routes.py, tests/test_auth.py",
+      "expected_output": "Form a code review team with dedicated reviewers for each perspective (security/performance/correctness) + a Codex cross-verification teammate + a synthesizer. Use the /tmp/xv/ artifact pattern.",
       "files": [],
       "expectations": [
-        "TeamCreate가 호출됨",
-        "보안, 성능, 정확성 중 최소 2개 관점의 전담 reviewer teammate가 존재",
-        "xv-codex 또는 cross-verification 전담 teammate가 존재",
-        "Codex CLI 호출이 teammate prompt에 포함됨",
-        "/tmp/xv/ 아티팩트 디렉토리 패턴이 사용됨",
-        "synthesizer 역할의 teammate가 결과를 종합",
-        "모든 Agent에 team_name이 포함됨"
+        "TeamCreate is called",
+        "Dedicated reviewer teammates exist for at least 2 of the 3 perspectives: security, performance, correctness",
+        "A dedicated xv-codex or cross-verification teammate exists",
+        "Codex CLI invocation is included in a teammate's prompt",
+        "The /tmp/xv/ artifact directory pattern is used",
+        "A synthesizer teammate aggregates the results",
+        "All Agent calls include team_name"
       ]
     }
   ]

@@ -1,7 +1,7 @@
 # CC Skills Template
 
-Claude Code의 능력을 극대화하는 **스킬 템플릿 모음**입니다.
-간단한 프롬프트 하나로 여러 AI 에이전트가 팀을 이루어 병렬로 작업하고, 서로 교차검증하며, 단일 에이전트보다 더 빠르고 정확한 결과를 만들어냅니다.
+Claude Code의 능력을 극대화하는 **프로덕션-레디 스킬 모음**입니다.
+간단한 프롬프트 하나로 여러 AI 에이전트가 팀을 이루어 병렬로 작업하고, 서로 교차검증하며, 단일 에이전트보다 **더 빠르고, 더 정확하고, 더 안전한** 결과를 만들어냅니다.
 
 ![Subagents vs Agent Teams](images/01-subagents-vs-agent-teams.png)
 > **Subagents vs Agent Teams**: Subagents는 개별 결과를 반환하는 독립 워커인 반면, Agent Teams는 공유 태스크 리스트와 양방향 통신으로 협업하는 팀입니다.
@@ -10,7 +10,7 @@ Claude Code의 능력을 극대화하는 **스킬 템플릿 모음**입니다.
 
 ## Performance Benchmark
 
-> **Agent Teams 스킬이 실제로 얼마나 차이를 만드는가?**
+> **스킬 적용 전후, 실제 성능 차이는?**
 > 동일한 프롬프트를 스킬 적용 / 미적용으로 실행하여 정량 비교한 결과입니다.
 
 ### 종합 결과
@@ -31,6 +31,8 @@ Claude Code의 능력을 극대화하는 **스킬 템플릿 모음**입니다.
 | **Pass Rate** | **100%** | 6% | **+94%** |
 | 평균 실행 시간 | 136.4s | 101.1s | +35.3s |
 | 평균 토큰 소비 | 22,669 | 14,181 | +8,488 |
+
+> 추가 토큰 ~8.5K (+60%)로 pass rate가 6% → 100%로 상승 — **토큰 1K당 +11%p 개선**
 
 ### 테스트 시나리오별 상세
 
@@ -94,7 +96,7 @@ Claude Code의 능력을 극대화하는 **스킬 템플릿 모음**입니다.
 ### 분석 요약
 
 - **팀 조직 패턴의 결정적 차이**: 스킬 없이는 Claude가 `Agent(team_name=...)` 대신 단일 에이전트 직접 작업으로 fallback하여, 병렬 협업/역할 분리/교차검증이 전혀 이루어지지 않음
-- **비용 대비 효과**: 추가 토큰 ~8.5K (+60%)로 pass rate가 6% → 100%로 상승 — **토큰 1K당 +11%p 개선**
+- **비용 대비 효과**: 추가 토큰 ~8.5K (+60%)로 pass rate가 6% → 100%로 상승
 - **교차검증의 체계화**: 스킬 적용 시에만 구조화된 아티팩트 (`/tmp/xv/`), Codex CLI 병렬 호출, 신뢰도 스코어링 (CRITICAL/HIGH/MEDIUM)이 작동
 - **파일 소유권 보장**: 팀 기반 접근에서만 teammate간 파일 충돌 0건 달성
 
@@ -106,35 +108,44 @@ Claude Code의 능력을 극대화하는 **스킬 템플릿 모음**입니다.
 
 ```
 .claude/skills/
-├── gemini-cli/                          # Google Gemini CLI 서브에이전트
-│   ├── SKILL.md (101줄)                 # 핵심 호출 패턴 5가지 + 플래그 + 제한사항
+├── agent-teams/                         # 멀티 에이전트 팀 협업 + 교차검증
+│   ├── SKILL.md                         # 팀 구성 + 필수 앙상블 규칙 + 아티팩트 패턴
+│   ├── evals/                           # 3 시나리오 (풀스택/디버깅/리뷰) 평가
+│   │   └── evals.json
 │   └── references/
-│       └── invocation-patterns.md       # JSON envelope, 동시실행, 에러코드, 빌트인 툴
+│       ├── team-sizing.md               # 팀 규모 가이드 + 역할 템플릿
+│       └── cross-verification.md        # 교차검증 워크플로 + 3-way 게이트
 │
 ├── codex-cli/                           # OpenAI Codex CLI 서브에이전트
-│   ├── SKILL.md (157줄)                 # exec 패턴 5가지 + 구조화출력 + 리뷰모드
+│   ├── SKILL.md                         # exec 패턴 + 구조화출력 + 리뷰모드
+│   ├── evals/                           # 3 시나리오 (로직/보안/알고리즘) 평가
+│   │   └── evals.json
 │   └── references/
 │       ├── invocation-patterns.md       # 전체 플래그, 샌드박스, JSONL, MCP 서버
 │       └── review-patterns.md           # 코드리뷰/보안감사/테스트갭 프롬프트 템플릿
 │
-├── agent-teams/                         # 멀티 에이전트 팀 협업 + 교차검증
-│   ├── SKILL.md (564줄)                 # 팀 구성 + 필수 앙상블 규칙 + 아티팩트 패턴
+├── gemini-cli/                          # Google Gemini CLI 서브에이전트
+│   ├── SKILL.md                         # 핵심 호출 패턴 + 플래그 + 제한사항
+│   ├── evals/                           # 3 시나리오 (코드리뷰/웹검색/보안) 평가
+│   │   └── evals.json
 │   └── references/
-│       ├── team-sizing.md               # 팀 규모 가이드 + 역할 템플릿
-│       └── cross-verification.md        # 상세 워크플로 + 3-way 게이트
+│       ├── invocation-patterns.md       # JSON envelope, 동시실행, 에러코드, 빌트인 툴
+│       └── review-patterns.md           # 코드리뷰/보안감사/웹검색 프롬프트 템플릿
 │
 └── gemini-image/                        # Gemini 이미지 생성
     ├── SKILL.md                         # 프롬프트 가이드 + 파라미터
+    ├── evals/                           # 3 시나리오 (로고/배너/썸네일) 평가
+    │   └── evals.json
     └── scripts/
-        └── generate_image.py            # 이미지 생성 스크립트
+        └── generate_image.py            # 이미지 생성 스크립트 (모델 폴백, 자동 재시도)
 ```
 
-| 스킬 | 설명 | 용도 |
-|------|------|------|
-| **agent-teams** | 멀티 에이전트 팀 협업 | 병렬 작업, 태스크 분배, 팀 간 통신 |
-| **gemini-cli** | Google Gemini CLI 서브에이전트 | 코드 리뷰, 웹 검색, 프론트엔드 분석 |
-| **codex-cli** | OpenAI Codex CLI 서브에이전트 | 독립 코드 분석, 로직 검증, 보안 감사 |
-| **gemini-image** | Gemini 이미지 생성 | UI 목업, 아이콘, 배너, 일러스트 생성 |
+| 스킬 | 설명 | 핵심 강점 | 평가 |
+|------|------|-----------|------|
+| **agent-teams** | 멀티 에이전트 팀 협업 + 교차검증 | 병렬 작업, 태스크 분배, 팀 간 양방향 통신, 3-way 게이트 | 3 시나리오 100% pass |
+| **codex-cli** | OpenAI Codex CLI 서브에이전트 | 독립 코드 분석, 구조화 JSON 출력, 브랜치 리뷰, 이미지 입력 | 3 시나리오 평가 포함 |
+| **gemini-cli** | Google Gemini CLI 서브에이전트 | 14개 빌트인 툴, 실시간 웹 검색, 코드 리뷰 | 3 시나리오 평가 포함 |
+| **gemini-image** | Gemini 3.1 Flash 이미지 생성 | 4개 모델 폴백, 참조 이미지 변환, 다중 생성, 자동 재시도 | 3 시나리오 평가 포함 |
 
 ---
 
@@ -197,15 +208,24 @@ GEMINI_API_KEY=AIza...your-key-here
 사용 예시:
 
 ```bash
+# 기본 이미지 생성
 python3 .claude/skills/gemini-image/scripts/generate_image.py "minimalist dashboard icon, blue" -o icon.png
+
+# 고해상도 와이드 배너
 python3 .claude/skills/gemini-image/scripts/generate_image.py "dark mode hero banner" -o banner.png --aspect 16:9 --size 2K
+
+# 기존 이미지를 다크모드로 변환
+python3 .claude/skills/gemini-image/scripts/generate_image.py "Convert to dark mode" -r light-theme.png -o dark-theme.png
+
+# 3개 변형 동시 생성
+python3 .claude/skills/gemini-image/scripts/generate_image.py "AI themed thumbnail" -o thumb.png -n 3
 ```
 
 ---
 
 ### 3. Gemini CLI (Gemini 서브에이전트)
 
-Google Gemini CLI를 서브에이전트로 사용합니다. 코드 리뷰, 웹 검색, 프론트엔드 분석에 활용됩니다.
+Google Gemini CLI를 서브에이전트로 사용합니다. **14개 빌트인 툴**(파일 읽기/쓰기, 웹 검색, grep 등)로 코드 리뷰, 실시간 웹 검색, 프론트엔드 분석에 활용됩니다.
 
 ```bash
 # 설치
@@ -224,7 +244,7 @@ gemini
 
 ### 4. Codex CLI (Codex 서브에이전트)
 
-OpenAI Codex CLI를 서브에이전트로 사용합니다. 독립적인 코드 분석과 로직 검증에 활용됩니다.
+OpenAI Codex CLI를 서브에이전트로 사용합니다. **구조화 JSON 출력**, **브랜치 리뷰 모드**, **이미지 입력** 등 독립적인 코드 분석과 로직 검증에 활용됩니다.
 
 ```bash
 # 설치
@@ -252,19 +272,32 @@ codex
 
 ---
 
-## 교차검증 규칙 (MUST Rules)
+## 교차검증 시스템 (Cross-Verification)
 
-작업 유형에 따라 **반드시** 사용해야 하는 AI 앙상블 조합입니다. **이 규칙은 비협상 사항입니다:**
+작업 유형에 따라 **반드시** 사용해야 하는 AI 앙상블 조합입니다.
+
+### 필수 앙상블 규칙
 
 | 작업 유형 | 필수 앙상블 | 이유 |
 |-----------|-------------|------|
-| 복잡한 코드 분석, 알고리즘, 수학/이론 | Claude + **Codex** | Codex가 논리적 추론과 코드 정확성에 뛰어남 |
-| 디버깅, 근본 원인 분석, 조사 | Claude + **Codex** | Codex가 코드 레벨 독립 분석에 뛰어남 |
-| 보안 감사 | Claude + **Codex** | 최소 2개 독립 보안 관점 필요 |
+| 코드 분석, 알고리즘, 수학/이론 | Claude + **Codex** | Codex의 논리적 추론 + 코드 정확성 |
+| 디버깅, 근본 원인 분석 | Claude + **Codex** | 코드 레벨 독립 분석으로 사각지대 제거 |
+| 보안 감사 | Claude + **Codex** | 최소 2개 독립 보안 관점 필수 |
 | 성능 분석, 최적화 리뷰 | Claude + **Codex** | 핫패스, N+1 쿼리, 비동기 패턴 검증 |
-| 프론트엔드 코드 리뷰, UI 패턴, 웹 리서치 | Claude + **Gemini** | Gemini가 웹 검색과 프론트엔드 분석에 뛰어남 |
-| E2E 시각 회귀, 스크린샷 검증 | Claude (네이티브 VLM) + **Gemini** (코드 리뷰) | Claude가 이미지 직접 분석, Gemini는 코드 측면 리뷰 |
-| 아키텍처 설계, 계획, 제안서 | Claude + **Codex** + **Gemini** (3-way 게이트) | 3명 모두 통과해야 계획 진행 |
+| 프론트엔드 리뷰, UI 패턴, 웹 리서치 | Claude + **Gemini** | Gemini 빌트인 웹 검색으로 최신 패턴 확인 |
+| E2E 시각 회귀, 스크린샷 검증 | Claude (네이티브 VLM) + **Gemini** (코드 리뷰) | Claude가 이미지 직접 분석 |
+| 아키텍처 설계, 계획, 제안서 | Claude + **Codex** + **Gemini** (3-way 게이트) | 3명 모두 통과해야 진행 |
+
+### AI 에이전트별 강점 비교
+
+| 능력 | Claude (네이티브) | Gemini CLI | Codex CLI |
+|------|------------------|------------|-----------|
+| 코드 로직 리뷰 | Excellent | Good | Excellent |
+| 이미지/스크린샷 분석 | **Excellent (네이티브)** | CLI 미지원 | `-i` 플래그 지원 |
+| 웹 검색 | WebSearch 툴 | **빌트인 (`-y` 플래그)** | 미지원 |
+| 구조화 출력 | 툴 기반 | `-o json` | **`--output-schema`** |
+| 브랜치 diff 리뷰 | git 툴 | 수동 | **`--base` 빌트인** |
+| 속도 | 즉시 | ~3-25s | ~3-15s |
 
 ### 신뢰도 판정 기준
 
@@ -352,7 +385,7 @@ Status: PASS | FAIL | PASS_WITH_COMMENTS
                     │                      │                       │
                     │              점수 < 85점?                    │
                     │              YES → 루프 반복                 │
-                    │              NO  → 통과 ✅                   │
+                    │              NO  → 통과                      │
                     └──────────────────────────────────────────────┘
 ```
 
@@ -367,208 +400,45 @@ Status: PASS | FAIL | PASS_WITH_COMMENTS
          │
          ├── Phase 1: 설계 + 트렌드 조사 (병렬) ────────────────┐
          │                                                        │
-         │   architect ──── 랜딩페이지 구조 설계 (mode=plan):    │
-         │     섹션 1: 히어로 (풀스크린 배너 + CTA)              │
-         │     섹션 2: 핵심 기능 3개 (아이콘 + 설명)             │
-         │     섹션 3: 사용 사례 (일러스트 + 텍스트)             │
-         │     섹션 4: 가격표 (3단 카드)                          │
-         │     섹션 5: CTA + 푸터                                 │
-         │                                                        │
-         │   xv-gemini ──── 웹 검색:                             │
-         │     "2026 SaaS landing page design trends"             │
-         │     "hero section best practices gradient glass"       │
+         │   architect ──── 랜딩페이지 구조 설계 (mode=plan)     │
+         │   xv-gemini ──── 웹 검색: "2026 SaaS landing page     │
+         │                   design trends"                       │
          │     -> glassmorphism + gradient mesh + 3D 일러스트     │
-         │     -> 무채색 배경 + 컬러 액센트 트렌드 보고          │
          │                                                        │
-         ├── Phase 2: 이미지 생성 (1차) ─────────────────────────┤
+         ├── Phase 2: 이미지 생성 ──────────────────────────────┤
          │                                                        │
          │   image-gen ──── gemini-image로 5개 이미지 생성:      │
+         │     [1] 히어로 배너 (--aspect 16:9 --size 2K)         │
+         │     [2-4] 기능 아이콘 3개 (256x256)                   │
+         │     [5] 사용 사례 일러스트 (--aspect 4:3)             │
          │                                                        │
-         │   [1] 히어로 배너:                                     │
-         │       "Wide SaaS hero banner, abstract gradient mesh   │
-         │        in deep blue (#0a1628) to teal (#0d9488),       │
-         │        floating 3D geometric shapes, glassmorphism     │
-         │        overlay, modern tech atmosphere, 16:9, no text" │
-         │       -> hero-banner.png (--aspect 16:9 --size 2K)    │
+         ├── Phase 3: 구현 ─────────────────────────────────────┤
          │                                                        │
-         │   [2-4] 기능 아이콘 3개:                               │
-         │       "Minimalist flat icon, [analytics/security/      │
-         │        integration], teal accent on transparent,       │
-         │        256x256, clean vector style"                    │
-         │       -> feature-1.png, feature-2.png, feature-3.png  │
+         │   ui-dev ─────── 설계 + 트렌드 + 이미지를 종합하여   │
+         │     HTML/CSS/JS 구현 (반응형, glassmorphism)           │
          │                                                        │
-         │   [5] 사용 사례 일러스트:                               │
-         │       "Isometric illustration of team collaborating    │
-         │        on dashboard, teal and blue palette, modern     │
-         │        flat style, white background"                   │
-         │       -> usecase-illustration.png (--aspect 4:3)      │
+         ├── Phase 4: E2E 스크린샷 캡처 ────────────────────────┤
          │                                                        │
-         ├── Phase 3: 구현 ──────────────────────────────────────┤
+         │   e2e-runner ─── Playwright로 desktop/tablet/mobile   │
          │                                                        │
-         │   ui-dev ─────── 설계 + 트렌드 + 이미지를 종합하여:  │
-         │     - HTML 시맨틱 구조 (header, main, sections)       │
-         │     - CSS: glassmorphism 카드, gradient mesh 배경      │
-         │     - 히어로: hero-banner.png을 배경으로, CTA 버튼     │
-         │     - 기능 섹션: 3-column grid, 아이콘 이미지 배치    │
-         │     - 가격표: 3단 카드 (Basic/Pro/Enterprise)          │
-         │     - 반응형: mobile-first, breakpoints 설정           │
+         ├══ Phase 5: 자동 검증 루프 (VLM 점수 기반) ═══════════╡
          │                                                        │
-         ├── Phase 4: E2E 스크린샷 캡처 ─────────────────────────┤
+         │   vlm-judge ─── Round 1: 76/100 (기준 85점 미달)      │
+         │   → 히어로 배너 가독성 저하, 아이콘 스타일 불일치     │
+         │   → image-gen 재생성 + ui-dev 수정                    │
          │                                                        │
-         │   e2e-runner ─── Playwright로 스크린샷:               │
-         │     - desktop (1920x1080)                              │
-         │     - tablet (768x1024)                                │
-         │     - mobile (375x812)                                 │
-         │     -> /tmp/screenshots/landing-desktop.png            │
-         │     -> /tmp/screenshots/landing-tablet.png             │
-         │     -> /tmp/screenshots/landing-mobile.png             │
+         │   vlm-judge ─── Round 2: 84/100 (근접!)               │
+         │   → 일러스트 배경색 미세 불일치                        │
+         │   → image-gen 재생성 (transparent 배경)               │
          │                                                        │
+         │   vlm-judge ─── Round 3: 87/100 (통과!)               │
          │                                                        │
-         ├══ Phase 5: 시각 품질 판정 (자동 검증 루프 시작) ══════╡
+         ├── Phase 6: 최종 교차검증 (병렬) ─────────────────────┤
          │                                                        │
-         │   vlm-judge ─── Claude VLM으로 스크린샷 3장 분석:     │
-         │                                                        │
-         │   ┌────────────────────────────────────────────────┐   │
-         │   │  시각 품질 스코어카드 (Round 1)                 │   │
-         │   │                                                │   │
-         │   │  시각적 조화 (이미지-레이아웃 융합)  .... 72/100│   │
-         │   │  색상 일관성 (이미지-UI 팔레트 통일)  .... 68/100│   │
-         │   │  타이포그래피 밸런스                   .... 81/100│   │
-         │   │  여백/정렬 품질                        .... 78/100│   │
-         │   │  반응형 적응도                         .... 85/100│   │
-         │   │  CTA 시인성                            .... 74/100│   │
-         │   │  ─────────────────────────────────────────────│   │
-         │   │  종합 점수:  76/100  ❌ (기준: 85점)          │   │
-         │   │                                                │   │
-         │   │  개선 필요 항목:                                │   │
-         │   │  [1] 히어로 배너 그라데이션이 텍스트 가독성 저하│   │
-         │   │      → 배너 하단에 어두운 오버레이 필요         │   │
-         │   │  [2] 기능 아이콘 스타일 불일치 (2번이 너무 복잡)│   │
-         │   │      → feature-2.png 재생성 (더 단순하게)       │   │
-         │   │  [3] 가격표 카드에 시각적 강조 부족             │   │
-         │   │      → Pro 카드에 glassmorphism 효과 추가        │   │
-         │   └────────────────────────────────────────────────┘   │
-         │                                                        │
-         │   synthesizer ── 76점 < 85점 → 루프 계속 판정         │
-         │     → image-gen에게 개선 피드백 전달                   │
-         │     → ui-dev에게 CSS 수정 사항 전달                    │
-         │                                                        │
-         │                                                        │
-         ├── [Loop Round 2] 이미지 재생성 + 수정 ────────────────┤
-         │                                                        │
-         │   image-gen ──── 피드백 반영하여 재생성:              │
-         │     [1] 히어로 배너 (수정):                            │
-         │         "...same prompt + add dark gradient overlay    │
-         │          at bottom 30%, ensure text readability"       │
-         │         -> hero-banner-v2.png                          │
-         │     [2] feature-2 아이콘 (재생성):                     │
-         │         "...simpler, more minimalist, match style      │
-         │          of feature-1 and feature-3"                   │
-         │         -> feature-2-v2.png                            │
-         │                                                        │
-         │   ui-dev ──────  수정 사항 반영:                      │
-         │     - 히어로 배너 교체 + 하단 gradient overlay 추가   │
-         │     - feature-2 아이콘 교체                            │
-         │     - Pro 가격 카드에 glassmorphism + 테두리 강조      │
-         │                                                        │
-         │   e2e-runner ─── 스크린샷 재캡처 (3장)                │
-         │                                                        │
-         │   vlm-judge ─── 재평가:                              │
-         │                                                        │
-         │   ┌────────────────────────────────────────────────┐   │
-         │   │  시각 품질 스코어카드 (Round 2)                 │   │
-         │   │                                                │   │
-         │   │  시각적 조화 (이미지-레이아웃 융합)  .... 88/100│   │
-         │   │  색상 일관성 (이미지-UI 팔레트 통일)  .... 84/100│   │
-         │   │  타이포그래피 밸런스                   .... 83/100│   │
-         │   │  여백/정렬 품질                        .... 80/100│   │
-         │   │  반응형 적응도                         .... 87/100│   │
-         │   │  CTA 시인성                            .... 86/100│   │
-         │   │  ─────────────────────────────────────────────│   │
-         │   │  종합 점수:  84/100  ❌ (기준: 85점, 근접!)    │   │
-         │   │                                                │   │
-         │   │  개선 필요 항목:                                │   │
-         │   │  [1] 색상 일관성: usecase 일러스트 배경색이     │   │
-         │   │      섹션 배경과 미세하게 불일치                 │   │
-         │   │      → 일러스트 배경을 transparent로 재생성      │   │
-         │   └────────────────────────────────────────────────┘   │
-         │                                                        │
-         │   synthesizer ── 84점 < 85점 → 루프 1회 더            │
-         │                                                        │
-         │                                                        │
-         ├── [Loop Round 3] 최종 미세 조정 ──────────────────────┤
-         │                                                        │
-         │   image-gen ──── usecase 일러스트 재생성:             │
-         │     "...same style, transparent background,            │
-         │      teal (#0d9488) accent only"                       │
-         │     -> usecase-illustration-v2.png                     │
-         │                                                        │
-         │   ui-dev ─────── 일러스트 교체 + 미세 조정            │
-         │   e2e-runner ─── 최종 스크린샷 캡처                   │
-         │                                                        │
-         │   vlm-judge ─── 최종 평가:                           │
-         │                                                        │
-         │   ┌────────────────────────────────────────────────┐   │
-         │   │  시각 품질 스코어카드 (Round 3 — FINAL)         │   │
-         │   │                                                │   │
-         │   │  시각적 조화 (이미지-레이아웃 융합)  .... 91/100│   │
-         │   │  색상 일관성 (이미지-UI 팔레트 통일)  .... 90/100│   │
-         │   │  타이포그래피 밸런스                   .... 84/100│   │
-         │   │  여백/정렬 품질                        .... 82/100│   │
-         │   │  반응형 적응도                         .... 88/100│   │
-         │   │  CTA 시인성                            .... 89/100│   │
-         │   │  ─────────────────────────────────────────────│   │
-         │   │  종합 점수:  87/100  ✅ (기준 통과!)           │   │
-         │   └────────────────────────────────────────────────┘   │
-         │                                                        │
-         │   synthesizer ── 87점 ≥ 85점 → 루프 종료, Phase 6으로 │
-         │                                                        │
-         │                                                        │
-         ├── Phase 6: 최종 교차검증 (병렬) ──────────────────────┤
-         │                                                        │
-         │   xv-codex ──── 독립 코드 감사:                       │
-         │     - Lighthouse: Performance 94, A11y 98, SEO 100    │
-         │     - 이미지 최적화: WebP 변환 권장 (2건)             │
-         │     - VERDICT: PASS_WITH_COMMENTS                     │
-         │                                                        │
-         │   xv-gemini ──── 최종 트렌드 검증:                    │
-         │     "이 랜딩페이지가 2026 SaaS 트렌드에 부합하는가?"  │
-         │     - glassmorphism ✅, gradient mesh ✅               │
-         │     - micro-interaction 추가 권장 (enhancement)       │
-         │     - VERDICT: APPROVE                                │
+         │   xv-codex ──── Lighthouse: Performance 94, A11y 98   │
+         │   xv-gemini ──── 2026 트렌드 부합 확인                │
          │                                                        │
          └───────────────────────────────────────── 완료 ─────────┘
-```
-
-#### 이미지 생성 프롬프트 진화 과정
-
-> 루프를 거치면서 이미지 프롬프트가 어떻게 정교해지는지 보여줍니다:
-
-```
-[Round 1] 초기 프롬프트:
-  "Wide SaaS hero banner, abstract gradient mesh in deep blue
-   to teal, floating 3D shapes, glassmorphism, 16:9, no text"
-
-  → 결과: 그라데이션이 밝아서 위에 흰색 텍스트가 안 보임 (72점)
-
-[Round 2] vlm-judge 피드백 반영:
-  "Wide SaaS hero banner, abstract gradient mesh in deep blue
-   (#0a1628) to teal (#0d9488), floating 3D shapes,
-   glassmorphism, dark gradient overlay at bottom 30% for
-   text readability, 16:9, no text"
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                              피드백에서 추가된 부분
-
-  → 결과: 텍스트 가독성 개선, 전체 톤 안정 (88점)
-
-[Round 3] 일러스트 배경 수정:
-  "Isometric illustration of team collaborating on dashboard,
-   teal (#0d9488) and blue palette, modern flat style,
-   transparent background"
-   ^^^^^^^^^^^^^^^^^^^^^^
-   불투명 흰색 → 투명으로 변경
-
-  → 결과: 섹션 배경과 완벽히 융합 (91점)
 ```
 
 #### 최종 결과
@@ -577,7 +447,7 @@ Status: PASS | FAIL | PASS_WITH_COMMENTS
 SaaS 랜딩페이지 — 완성
 ═══════════════════════
 생성 이미지: 7개 (히어로 배너 v2, 아이콘 3개, 일러스트 v2 + 원본 2개)
-루프 횟수:   3회 (76점 → 84점 → 87점 ✅)
+루프 횟수:   3회 (76점 → 84점 → 87점)
 구현 파일:   index.html, styles.css, script.js
 반응형:      desktop / tablet / mobile 대응
 검증 결과:
@@ -588,10 +458,10 @@ SaaS 랜딩페이지 — 완성
 이미지-디자인 융합 점수 변화:
   Round 1:  72/100  ███████░░░  "이미지가 붕 떠 보임"
   Round 2:  88/100  ████████░░  "거의 자연스러움"
-  Round 3:  91/100  █████████░  "완전히 녹아듦" ✅
+  Round 3:  91/100  █████████░  "완전히 녹아듦"
 ```
 
-> **이 예제의 핵심**: AI가 이미지를 생성하고 끝나는 것이 아니라, **스크린샷 → VLM 점수 → 피드백 → 이미지 재생성 → 재구현**의 루프를 자동으로 반복하여, 생성된 이미지가 웹 디자인에 **완전히 녹아드는 수준**까지 도달합니다. 사람이 개입하지 않아도 점수 기반으로 자가 판단하여 품질을 끌어올립니다.
+> **핵심**: AI가 이미지를 생성하고 끝나는 것이 아니라, **스크린샷 → VLM 점수 → 피드백 → 이미지 재생성 → 재구현**의 루프를 자동으로 반복하여, 생성된 이미지가 웹 디자인에 **완전히 녹아드는 수준**까지 도달합니다.
 
 ---
 
@@ -609,9 +479,7 @@ SaaS 랜딩페이지 — 완성
 | `tester` | 테스트 | claude | 통합 테스트, 엣지 케이스 검증 |
 
 ```
-사용자: "결제 시스템에 환불 기능 추가해줘. 부분환불/전체환불
-         지원하고, 금액 계산 로직은 교차검증해줘. /agent-teams"
-         │
+    /agent-teams
          │
          ├── Phase 1: 병렬 구현 ─────────────────────────────────┐
          │   api-dev ────── POST /refunds 엔드포인트 구현        │
@@ -626,19 +494,6 @@ SaaS 랜딩페이지 — 완성
          ├── Phase 3: 통합 테스트 ───────────────────────────────┤
          │   tester ────── 전체 환불 플로우 E2E 테스트            │
          └───────────────────────────────────────── 완료 ─────────┘
-```
-
-**교차검증 핵심 순간:**
-
-```
-[xv-codex] Codex 분석 결과:
-  - 부분 환불 계산식에서 쿠폰 적용 순서 이슈 발견
-  - calculateRefundAmount()에서 쿠폰 할인을 환불 후
-    재적용하지 않는 버그 식별
-  - 수정 제안: 쿠폰 비례 배분 방식으로 변경 필요
-
-[service-dev] 쿠폰 비례 배분 로직으로 수정 완료
-[tester] 통합 테스트 12개 전체 통과
 ```
 
 ---
@@ -659,21 +514,14 @@ SaaS 랜딩페이지 — 완성
     /agent-teams
          │
          ├── Phase 1: 조사 + 디자인 (병렬) ─────────────────────┐
-         │   xv-gemini ──── 웹 검색: "2026 dark mode best       │
-         │                   practices dashboard design"         │
-         │                   -> Adaptive dimming, semantic tokens │
-         │                                                        │
-         │   ui-designer ── gemini-image로 목업 생성:             │
-         │                   "Modern dark mode dashboard,         │
-         │                    charts, sidebar, KPI cards"          │
-         │                   -> /tmp/dashboard-dark-mockup.png    │
+         │   xv-gemini ──── "2026 dark mode best practices"      │
+         │   ui-designer ── gemini-image로 목업 생성              │
          │                                                        │
          ├── Phase 2: 구현 ──────────────────────────────────────┤
          │   ui-dev ─────── 조사 결과 + 목업을 참고하여 구현     │
          │                                                        │
          ├── Phase 3: 시각 검증 ─────────────────────────────────┤
-         │   vlm-judge ─── 스크린샷 vs 목업 비교:               │
-         │                   "사이드바 패딩 부족, KPI 카드 수정"   │
+         │   vlm-judge ─── 스크린샷 vs 목업 비교 판정            │
          │   tester ─────── WCAG AA 대비율 검증 통과             │
          └───────────────────────────────────────── 완료 ─────────┘
 ```
@@ -688,7 +536,7 @@ SaaS 랜딩페이지 — 완성
 |----------|------|-----------|-----------|
 | `security-analyst` | 1차 보안 분석 | claude | OWASP Top 10 정적 분석 |
 | **`xv-codex`** | **독립 보안 리뷰** | **codex-cli** | **인증 플로우 독립 취약점 분석** |
-| **`xv-gemini`** | **최신 CVE 조사** | **gemini-cli** | **사용 라이브러리 최신 CVE 확인** |
+| **`xv-gemini`** | **최신 CVE 조사** | **gemini-cli** | **사용 라이브러리 최신 CVE 웹 검색** |
 | `synthesizer` | 3-way 게이트 | claude | 3개 분석 결과 종합 판정 |
 
 ```
@@ -700,14 +548,12 @@ SaaS 랜딩페이지 — 완성
          │     [HIGH] JWT alg:none 검증 누락                     │
          │     [MED]  Rate limiting 미적용                       │
          │                                                        │
-         │   xv-codex (Codex CLI - 독립 검증):                   │
+         │   xv-codex (Codex CLI):                               │
          │     [HIGH] JWT alg:none 검증 누락 (Claude와 일치!)    │
          │     [HIGH] refresh token 재사용 가능 (추가 발견)      │
-         │     [LOW]  에러 메시지에 스택 트레이스 노출            │
          │                                                        │
-         │   xv-gemini (Gemini CLI - 웹 검색):                   │
+         │   xv-gemini (Gemini CLI):                             │
          │     [CRITICAL] jsonwebtoken < 9.0.3 CVE 발견          │
-         │     현재 사용 버전 8.5.1 → 취약!                      │
          │                                                        │
          ├── Phase 2: 3-way 게이트 판정 ─────────────────────────┤
          │                                                        │
@@ -756,7 +602,7 @@ SaaS 랜딩페이지 — 완성
     예상 효과: p99 응답시간 12s → 200ms 이하
 ```
 
-> 단일 에이전트였다면 로그만 보고 "서버 과부하"로 결론냈을 것입니다. 4개 관점을 교차하니 **캐시 스탬피드**가 근본 원인임을 정확히 특정할 수 있었습니다.
+> 단일 에이전트였다면 로그만 보고 "서버 과부하"로 결론냈을 것입니다. 5개 관점을 교차하니 **캐시 스탬피드**가 근본 원인임을 정확히 특정할 수 있었습니다.
 
 ---
 
@@ -779,14 +625,14 @@ SaaS 랜딩페이지 — 완성
          │
          ├── Phase 2: 3-way 독립 리뷰 (완전 병렬)
          │   claude-critic:     "5명이 4개 서비스 관리는 과도"     → CONDITIONAL PASS
-         │   xv-codex-critic:   "user-order 결합도 47개, 동시 분리 불가" → FAIL
-         │   xv-gemini-critic:  "모듈화 선행 없이 분리 실패율 높음"    → FAIL
+         │   xv-codex-critic:   "user-order 결합도 47개, 분리 불가" → FAIL
+         │   xv-gemini-critic:  "모듈화 선행 없이 분리 실패율 높음"  → FAIL
          │
          ├── Phase 3: 3-way 게이트 ── REJECTED (2/3 실패)
          │   → architect에게 피드백 전달, v2 재설계 요청
          │
-         ├── Phase 4: architect ── 피드백 반영하여 v2 작성
-         │   + Phase 0 모듈러 모놀리스 추가 (Gemini 피드백)
+         ├── Phase 4: architect ── v2 작성 (피드백 반영)
+         │   + Phase 0 모듈러 모놀리스 (Gemini 피드백)
          │   + payment 먼저 분리 (Codex 피드백)
          │   + 단계적 확장 (Claude 피드백)
          │
@@ -801,7 +647,7 @@ SaaS 랜딩페이지 — 완성
          └───────────────────────── 구현 진행 허가
 ```
 
-> 1차에서 REJECTED된 설계가 3명의 독립 비평가의 피드백을 반영하여 **훨씬 더 현실적이고 안전한 계획**으로 개선되었습니다. 이것이 3-way 게이트의 핵심 가치입니다.
+> 1차에서 REJECTED된 설계가 3명의 독립 비평가의 피드백을 반영하여 **훨씬 더 현실적이고 안전한 계획**으로 개선되었습니다.
 
 ---
 
@@ -819,11 +665,6 @@ SaaS 랜딩페이지 — 완성
      └─ Backend WF engine + API research
 ```
 
-| 팀원 | 역할 | 태스크 |
-|------|------|--------|
-| **ui-researcher** | 프론트엔드 HRP UI 플로우 분석 | #1 |
-| **api-researcher** | 백엔드 WF 엔진 + API 분석 | #2 |
-
 **4단계 파이프라인 자동 설계:**
 
 ```
@@ -835,24 +676,6 @@ Phase 3: 구현 — Frontend (#7) + Backend (#8) 병렬
 ↓
 Phase 4: 테스트 (#9) — 단위 + E2E
 ```
-
-### Phase 1 확장: 3명 병렬 + 교차검증 에이전트
-
-```
-● 3 agents launched (ctrl+o to expand)
-  ├─ @equity-tracer (Explore)
-  │  └─ Equity curve generation logic audit
-  ├─ @weight-tracer (Explore)
-  │  └─ Weight precompute + HRP consumption audit
-  └─ @xv-codex
-     └─ Codex cross-verify precompute logic
-```
-
-| 팀원 | 조사 범위 |
-|------|-----------|
-| **equity-tracer** | 에쿼티커브 생성 파이프라인, 연도 파티션, 정규화, 시그널 생성 |
-| **weight-tracer** | SharedDataCache 로딩, 다연도 체이닝, HRP 소비 로직, 이론적 타당성 |
-| **xv-codex** | Codex 독립 교차검증 (체인 정규화, 스케일 불일치, 논리적 결함) |
 
 ### Phase 2: Codex 교차검증 실행
 
@@ -874,15 +697,15 @@ Bash(codex exec --ephemeral --full-auto -s read-only #
 
 | Phase | Task | 상태 |
 |-------|------|------|
-| **1. 리서치** | #1 프론트엔드 UI 플로우 | ✅ |
-| | #2 백엔드 WF 엔진 + API | ✅ |
-| **2. 설계 + 검증** | #3 IW Direct 설계안 | ✅ |
-| | #4 Codex 교차검증 | ✅ (APPROVE, 2 CRITICAL) |
-| | #5 Gemini 교차검증 | ✅ (APPROVE, 1 CRITICAL) |
-| | #6 3-way 합성 | ✅ (3 CRITICAL + 5 HIGH 해결) |
-| **3. 구현** | #7 프론트엔드 (4파일) | ✅ |
-| | #8 백엔드 (2파일) | ✅ |
-| **4. 테스트** | #9 단위 + E2E | ✅ 46/46 pass, 530 전체 무회귀 |
+| **1. 리서치** | #1 프론트엔드 UI 플로우 | done |
+| | #2 백엔드 WF 엔진 + API | done |
+| **2. 설계 + 검증** | #3 IW Direct 설계안 | done |
+| | #4 Codex 교차검증 | done (APPROVE, 2 CRITICAL) |
+| | #5 Gemini 교차검증 | done (APPROVE, 1 CRITICAL) |
+| | #6 3-way 합성 | done (3 CRITICAL + 5 HIGH 해결) |
+| **3. 구현** | #7 프론트엔드 (4파일) | done |
+| | #8 백엔드 (2파일) | done |
+| **4. 테스트** | #9 단위 + E2E | done (46/46 pass, 530 전체 무회귀) |
 
 **구현 내역:**
 
@@ -907,9 +730,32 @@ Bash(codex exec --ephemeral --full-auto -s read-only #
 
 ---
 
-## 스킬 커스터마이징 — 나만의 워크플로우 최적화
+## Eval 시스템
 
-`.claude/skills/`의 `SKILL.md` 파일들은 Claude Code의 행동을 정의하는 **프롬프트**입니다. 이 스킬들은 **범용 템플릿**으로 설계되어 있어 그대로 사용해도 강력하지만, **프로젝트 특성에 맞게 수정하면 효율이 극대화**됩니다.
+모든 스킬에는 **자동화된 평가(Eval) 테스트**가 포함되어 있어 스킬의 품질을 정량적으로 검증할 수 있습니다.
+
+| 스킬 | Eval 시나리오 | 검증 항목 |
+|------|---------------|-----------|
+| **agent-teams** | 풀스택 구현, 버그 조사, 코드 리뷰+교차검증 | TeamCreate 사용, team_name 파라미터, 파일 소유권 분리, 테스트 teammate 포함, Codex CLI 호출 |
+| **codex-cli** | 로직 검증, 보안 교차검증, 알고리즘 정확성 | codex exec 호출, read-only 샌드박스, /tmp/xv/ 아티팩트 생성, 미설치 시 안내 |
+| **gemini-cli** | 코드 리뷰, 웹 검색, 보안 분석 | gemini CLI 호출, -y -p 플래그, timeout 래핑, 웹 검색 활용 |
+| **gemini-image** | 로고 생성, 히어로 배너, 다중 썸네일 | 파일 생성 확인, 영문 프롬프트 사용, aspect/size 플래그, -n 다중 생성 |
+
+Eval 실행:
+
+```bash
+# Claude Code 내에서
+/eval .claude/skills/agent-teams/evals/evals.json
+/eval .claude/skills/codex-cli/evals/evals.json
+/eval .claude/skills/gemini-cli/evals/evals.json
+/eval .claude/skills/gemini-image/evals/evals.json
+```
+
+---
+
+## 스킬 커스터마이징
+
+`.claude/skills/`의 `SKILL.md` 파일들은 Claude Code의 행동을 정의하는 **프롬프트**입니다. **범용 템플릿**으로 설계되어 있어 그대로 사용해도 강력하지만, **프로젝트에 맞게 수정하면 효율이 극대화**됩니다.
 
 가장 쉬운 방법은 Claude Code에게 자연어로 요청하는 것입니다:
 
@@ -918,9 +764,7 @@ Bash(codex exec --ephemeral --full-auto -s read-only #
 agent-teams 스킬을 내 프로젝트에 맞게 최적화해줘
 ```
 
-이렇게 요청하면 Claude Code가 `.claude/skills/agent-teams/SKILL.md`를 읽고, Django + React에 특화된 팀 구성 패턴, 체크리스트, 역할 분담 등을 자동으로 반영합니다.
-
-### 구체적 예시
+### 직종별 커스터마이징 예시
 
 **백엔드 개발자 (Python/FastAPI)**
 
@@ -930,7 +774,7 @@ agent-teams 스킬에서 팀 구성할 때 항상 db-migration 팀원과
 API 문서 자동생성 팀원을 포함하도록 최적화해줘
 ```
 
-→ `SKILL.md`의 팀 구성 템플릿에 `db-migration-specialist`와 `api-docs-generator` 역할이 기본 포함되고, Alembic 마이그레이션 검증 단계와 OpenAPI 스펙 자동 갱신 단계가 워크플로우에 추가됩니다.
+→ Alembic 마이그레이션 검증 단계 + OpenAPI 스펙 자동 갱신이 워크플로우에 추가
 
 **프론트엔드 개발자 (Next.js)**
 
@@ -940,7 +784,7 @@ Next.js App Router 프로젝트인데, gemini-cli 스킬에서
 중점적으로 체크하도록 수정해줘
 ```
 
-→ `gemini-cli`의 리뷰 프롬프트에 `'use client'` 디렉티브 누락 검출, 불필요한 클라이언트 컴포넌트 경고, 서버 컴포넌트에서의 상태 관리 안티패턴 체크 등 Next.js App Router 특화 규칙이 추가됩니다.
+→ `'use client'` 누락 검출, 불필요한 클라이언트 컴포넌트 경고 등 Next.js 특화 규칙 추가
 
 **데이터 엔지니어 (Spark/Airflow)**
 
@@ -950,7 +794,7 @@ codex-cli 스킬의 코드 리뷰 템플릿에 DAG 의존성 검증과
 Spark 성능 안티패턴 체크를 추가해줘
 ```
 
-→ `codex-cli`의 리뷰 체크리스트에 DAG 순환 의존성 검출, `collect()` 남용 경고, 파티션 편향(skew) 감지 등 데이터 파이프라인 특화 검증 항목이 포함됩니다.
+→ DAG 순환 의존성 검출, `collect()` 남용 경고, 파티션 편향 감지 추가
 
 **모바일 개발자 (Flutter)**
 
@@ -960,36 +804,26 @@ Flutter 프로젝트에 맞게 agent-teams 스킬을 수정해줘.
 gemini-image로 앱 스크린샷 목업을 생성하는 팀원도 포함해줘
 ```
 
-→ 팀 템플릿에 `ios-tester`, `android-tester`, `ui-mockup-designer` 역할이 추가되고, 플랫폼별 빌드 검증과 `gemini-image`를 활용한 UI 목업 생성 단계가 워크플로우에 통합됩니다.
-
-**금융/퀀트 개발자**
-
-```
-퀀트 트레이딩 시스템 개발하는데, agent-teams에서
-수학적 검증이 필요한 로직은 반드시 Codex 교차검증을
-거치도록 MUST 규칙을 강화해줘
-```
-
-→ MUST 규칙 섹션에 "수학적 연산, 통계 모델, 리스크 계산 로직은 반드시 Codex CLI를 통한 독립적 교차검증을 수행할 것"이 추가됩니다.
+→ `ios-tester`, `android-tester`, `ui-mockup-designer` 역할 추가
 
 ### 커스터마이징 팁
 
-- **`SKILL.md`는 마크다운**이므로 Claude Code에게 요청하지 않고 직접 편집해도 됩니다
+- **`SKILL.md`는 마크다운**이므로 직접 편집해도 됩니다
 - **프로젝트의 `CLAUDE.md`에 공통 규칙을 정의**하면 모든 스킬에 자동 적용됩니다
-- **`.claude/skills/`를 git으로 버전 관리**하면 팀원 간 동일한 최적화된 워크플로우를 공유할 수 있습니다
+- **`.claude/skills/`를 git으로 버전 관리**하면 팀원 간 동일한 워크플로우를 공유할 수 있습니다
 - **`references/` 디렉토리에 프로젝트 특화 프롬프트 템플릿**을 추가하면 더 정교한 커스터마이징이 가능합니다
 
 ---
 
 ## 예제 요약
 
-| 예제 | 프롬프트 | 에이전트 | 자동 로딩된 스킬 | 핵심 기능 |
-|------|----------|----------|------------------|-----------|
-| **랜딩페이지** | **"...AI로 이미지 생성, 트렌드 반영, 검증해줘. /agent-teams"** | **8명** | gemini-image, codex-cli, gemini-cli | **이미지 생성 + VLM 자동 검증 루프 (76→87점)** |
+| 예제 | 프롬프트 | 에이전트 | 자동 로딩 스킬 | 핵심 기능 |
+|------|----------|----------|----------------|-----------|
+| **랜딩페이지** | **"...AI로 이미지 생성, 트렌드 반영, 검증해줘. /agent-teams"** | **8명** | gemini-image, codex-cli, gemini-cli | **이미지 생성 + VLM 자동 검증 루프** |
 | 풀스택 개발 | "...교차검증해줘. /agent-teams" | 6명 | codex-cli | Codex 교차검증으로 버그 사전 발견 |
 | 리디자인 | "...목업 생성, 트렌드 조사. /agent-teams" | 5명 | gemini-image, gemini-cli | 이미지 생성 + 웹 검색 + 시각 검증 |
 | 보안 감사 | "...3-way 교차검증해줘. /agent-teams" | 4명 | codex-cli, gemini-cli | 3-way 독립 분석으로 취약점 2.5배 포착 |
-| 버그 조사 | "...코드 레벨 독립 분석. /agent-teams" | 5명 | codex-cli | 멀티 관점 동시 조사로 근본 원인 특정 |
+| 버그 조사 | "...코드 레벨 독립 분석. /agent-teams" | 5명 | codex-cli | 멀티 관점 동시 조사 |
 | 아키텍처 | "...3-way 게이트로 검증. /agent-teams" | 5명 | codex-cli, gemini-cli | 3-way 게이트로 설계 품질 보장 |
 
-> **핵심 가치**: 원하는 것을 자연어로 작성하고 끝에 `/agent-teams`만 붙이세요. 작업 내용을 분석하여 필요한 스킬(`codex-cli`, `gemini-cli`, `gemini-image` 등)을 **자동으로 로딩**하고 최적의 팀을 구성합니다 → 단일 에이전트 대비 **더 빠르고, 더 정확하고, 더 안전한** 결과
+> **핵심 가치**: 원하는 것을 자연어로 작성하고 끝에 `/agent-teams`만 붙이세요. 작업 내용을 분석하여 필요한 스킬을 **자동으로 로딩**하고 최적의 팀을 구성합니다 → 단일 에이전트 대비 **더 빠르고, 더 정확하고, 더 안전한** 결과

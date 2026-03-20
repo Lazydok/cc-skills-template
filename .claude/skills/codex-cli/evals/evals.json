@@ -1,0 +1,23 @@
+{
+  "skill_name": "codex-cli",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review the file src/utils/calculator.py with Codex. Check for any logic errors or edge case issues.",
+      "expected_output": "An execution plan to review the file using codex exec --ephemeral -s read-only. Includes file contents in the prompt via a heredoc pattern. Wrapped with a timeout.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Independently verify the entire src/auth/ directory changed in this PR from a security perspective using Codex. Save cross-verification artifacts to /tmp/xv/.",
+      "expected_output": "A plan to perform a security audit using codex exec and save results as artifacts to /tmp/xv/. Uses the standard artifact format (Status, Findings, Verdict).",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Verify the correctness of this algorithm using Codex. Also, let me know what to do if codex isn't installed.",
+      "expected_output": "Checks availability with command -v codex, then performs the review if installed. If not, provides installation instructions (npm install -g @openai/codex) and a fallback strategy.",
+      "files": []
+    }
+  ]
+}

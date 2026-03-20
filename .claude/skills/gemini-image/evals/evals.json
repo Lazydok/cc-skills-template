@@ -1,0 +1,40 @@
+{
+  "skill_name": "gemini-image",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create a logo icon for the project main page. Blue color scheme, minimalist feel, around 256x256 size. Save it to public/images/logo.png",
+      "expected_output": "public/images/logo.png file is created and the script runs without errors",
+      "files": [],
+      "assertions": [
+        {"name": "image-file-created", "check": "output directory contains at least one image file (png/jpg/webp)"},
+        {"name": "script-no-error", "check": "transcript shows no ERROR lines and script exited successfully"},
+        {"name": "english-prompt-used", "check": "the command used an English prompt (not Korean) for better quality"},
+        {"name": "correct-output-path", "check": "image was saved to the specified outputs directory"}
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I need a hero banner image for the top of the landing page. Dark theme with a purple-to-blue gradient background, wide aspect ratio. High resolution please. Save to assets/hero-banner.png",
+      "expected_output": "assets/hero-banner.png is generated with 16:9 aspect ratio and 2K size",
+      "files": [],
+      "assertions": [
+        {"name": "image-file-created", "check": "output directory contains at least one image file"},
+        {"name": "aspect-ratio-set", "check": "command included --aspect 16:9 flag"},
+        {"name": "high-res-set", "check": "command included --size 2K flag"},
+        {"name": "correct-output-path", "check": "image was saved to the specified outputs directory"}
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Generate 3 variations of a blog post thumbnail. Theme is 'AI and the Future', modern feel. Save to thumbnails/ai-future.png",
+      "expected_output": "3 files created: thumbnails/ai-future_0.png, ai-future_1.png, ai-future_2.png",
+      "files": [],
+      "assertions": [
+        {"name": "multiple-images-created", "check": "output directory contains 3 image files"},
+        {"name": "count-param-used", "check": "command included -n 3 flag"},
+        {"name": "correct-output-path", "check": "images were saved to the specified outputs directory"}
+      ]
+    }
+  ]
+}
