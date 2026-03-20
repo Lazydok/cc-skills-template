@@ -1,12 +1,14 @@
 ---
 name: agent-teams
 description: >
-  MUST use Agent Teams (TeamCreate → Agent with team_name) for ALL multi-step,
-  multi-file, or parallel tasks. This skill triggers when the user requests team-based
-  work, parallel research, code review, debugging, multi-module development, or any task
-  involving 2+ independent work streams. When this skill triggers, ALWAYS create a team
-  with TeamCreate first, then spawn teammates via Agent tool WITH team_name parameter.
-  NEVER fall back to plain subagents (Agent without team_name) when this skill is active.
+  Use Agent Teams (TeamCreate → Agent with team_name) for tasks that benefit from
+  coordinated parallel work: multi-module features (3+ files across different directories),
+  multi-perspective code review, team-based debugging/investigation, cross-verification
+  with external agents, or any task where 2+ independent work streams can run in parallel.
+  Not needed for single-file edits, simple lookups, or sequential tasks that touch 1-2 files.
+  When this skill triggers, create a team with TeamCreate first, then spawn teammates via
+  Agent tool WITH team_name parameter — never fall back to plain subagents (Agent without
+  team_name) when this skill is active.
   Triggers on: "agent team", "team", "parallel", "teammates", "coordinate", "swarm",
   "multi-agent", "cross-verify", "code review team", "investigation team".
 ---
@@ -145,26 +147,26 @@ SendMessage(
 
 ## Team Sizing Strategy
 
-**Default: 4-7 teammates.** Never default to 2-3 when more parallel streams exist.
+Right-size the team based on the actual parallelism available. Small tasks need small teams; large tasks need larger ones.
 
 ### Sizing Rules
 
 1. **Count independent file groups** — each group = 1 teammate
 2. **Count distinct concerns** — each = 1 teammate
-3. **Team size = max(file groups, concerns)**, minimum 4 for non-trivial tasks
-4. **Always include a dedicated test teammate**
-5. When in doubt, **round up**
+3. **Team size = max(file groups, concerns)**, minimum 2 teammates
+4. **Include a dedicated test teammate** when implementation is involved
+5. When in doubt, **round up** — an idle teammate costs less than a missing one
 
 ### Quick Sizing Guide
 
 | Task Scope | Teammates | Example |
 |---|---|---|
-| Single-module fix | 3-4 | Fix, test, review, docs |
-| Multi-module feature | 5-6 | One per module + test + review |
+| Single-module fix | 2-3 | Fix + test (+ review if complex) |
+| Multi-module feature | 4-6 | One per module + test + review |
 | Full-stack feature | 5-7 | Backend, DB, frontend UI, frontend state, tests, docs |
 | Large refactoring | 5-8 | One per subsystem + migration + test |
-| Investigation/debug | 4-6 | One per hypothesis/subsystem |
-| Code review | 4-5 | Security, performance, correctness, coverage |
+| Investigation/debug | 3-6 | One per hypothesis/subsystem |
+| Code review | 3-5 | Security, performance, correctness, coverage |
 
 **Detailed sizing with role templates**: See [references/team-sizing.md](references/team-sizing.md)
 
@@ -287,7 +289,7 @@ Each reviewer writes to a shared findings doc. Lead synthesizes final report.
 | Anti-Pattern | Why |
 |-------------|-----|
 | Use `Agent()` without `team_name` | Creates subagent, NOT teammate — no team coordination |
-| Default to 2-3 teammates | Leaves parallelism on the table |
+| Under-size the team when more parallel streams exist | Leaves parallelism on the table |
 | Two teammates editing same file | Causes overwrites |
 | Broadcast when a DM suffices | Token cost scales with team size |
 | Skip spawn context in `prompt` | Teammates start blind |
@@ -315,6 +317,51 @@ External CLI agents (Gemini, Codex) communicate with teammates through **structu
 **Confidence**: CRITICAL (all agree) → must fix; HIGH (2/3) → investigate; MEDIUM (1/3) → likely false positive.
 
 **Full details**: Team patterns, artifact format, CLI invocation examples, gate logic → **[references/cross-verification.md](references/cross-verification.md)**
+
+## Prerequisites
+
+Agent Teams requires the experimental feature flag. Ensure it is set in `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+Without this flag, `TeamCreate`, `SendMessage`, and team-related `Agent` parameters will not be available.
+
+## Handling Teammate Failures
+
+Teammates can fail, time out, or get stuck. Here's how to handle each scenario:
+
+### Teammate Times Out or Stops Responding
+
+1. Check task status: `TaskGet(taskId="X")` — if still `in_progress` for too long, the teammate may be stuck
+2. Try nudging via `SendMessage(type="message", recipient="stuck-teammate", content="Status update?")`
+3. If no response, spawn a **replacement teammate** with the same role and assign the incomplete task to it
+4. Send a `shutdown_request` to the stuck teammate to clean it up
+
+### Teammate Produces Wrong Output
+
+1. Review the output via `TaskGet` or by reading the output files
+2. Send corrective feedback: `SendMessage(type="message", recipient="teammate", content="The output has issue X. Please fix Y.")`
+3. If the teammate cannot recover, spawn a replacement with a more specific prompt that addresses the issue
+
+### Teammate Hits Permission Error
+
+If a teammate cannot access a file or run a command it needs:
+1. Check that the teammate was spawned with the right `subagent_type` — `Explore` cannot write files, `general-purpose` can
+2. If it needs elevated permissions, spawn a new teammate with `mode` unset (default allows all operations)
+
+### Partial Team Failure
+
+If some teammates succeed but others fail, the lead should:
+1. Collect completed work from successful teammates
+2. Spawn replacement teammates only for the failed tasks
+3. Pass the successful teammates' output as context in the replacement's prompt
+4. Update task dependencies if the original dependency graph has changed
 
 ## Troubleshooting
 

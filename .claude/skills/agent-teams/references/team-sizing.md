@@ -8,7 +8,7 @@ Map project scope to optimal team size. The goal is maximum parallelism with min
 
 | Project Type | Teammates | Rationale |
 |---|---|---|
-| **Single-module bug fix** | 2-3 | Fix + test + review |
+| **Single-module bug fix** | 2-3 | Fix + test (+ review if complex) |
 | **Multi-module feature** | 4-6 | One per module + test + integration |
 | **Full-stack feature** | 5-7 | Backend API, DB/migration, frontend UI, frontend state, tests, docs, review |
 | **Large refactoring** | 5-8 | One per subsystem + migration + test + review |
@@ -45,7 +45,7 @@ Before deciding team size, count:
 
 **Team size = max(independent file groups, distinct concerns)**
 
-Minimum 2 (below this, use subagents). Scale up to 7-8 for large cross-cutting work.
+Minimum 2 teammates (below this, use subagents instead). Scale up to 7-8 for large cross-cutting work.
 
 ## Role Templates
 
