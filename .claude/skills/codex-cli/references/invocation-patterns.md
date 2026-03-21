@@ -14,7 +14,7 @@
 | `-C DIR` | Working directory | Requires `--skip-git-repo-check` if not git repo |
 | `-i FILE` | Attach image(s) to prompt | `-i screenshot.png` (repeatable) |
 | `-p PROFILE` | Named config profile from config.toml | `-p fast-review` |
-| `--full-auto` | Auto-approve + workspace-write | Alias for `-a on-request -s workspace-write` (**overrides** `-s`, do NOT combine with `-s read-only`) |
+| `--full-auto` | Auto-approve + workspace-write | Alias for `-a on-request -s workspace-write` (**overrides any `-s` flag** — do NOT combine with `-s read-only` or `-s danger-full-access`) |
 | `--skip-git-repo-check` | Run outside git repos | Required with `-C` to non-git dirs |
 | `--oss` | Use local open-source model | Requires LM Studio or Ollama running locally |
 | `--local-provider PROVIDER` | Specify local provider | `--local-provider lmstudio` or `--local-provider ollama` |
@@ -94,7 +94,7 @@ codex exec review --base main --title "Auth refactor" --json  # with title conte
 | `workspace-write` | workdir | workdir, /tmp | Yes | No |
 | `danger-full-access` | All | All | All | Yes |
 
-For sub-agent: always use `read-only` unless writes are explicitly needed.
+For sub-agent: use `read-only` for analysis, `danger-full-access` when network/full-write is needed. Note: `danger-full-access` auto-sets approval to `never` — no need for `--full-auto`.
 
 ## Config Overrides
 
