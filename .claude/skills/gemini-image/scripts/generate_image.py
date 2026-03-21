@@ -231,10 +231,8 @@ def generate_image(args):
 
     client = genai.Client(api_key=api_key)
 
-    # Determine model: auto-fallback if not explicitly specified
-    model = args.model
-    if not model:
-        model = _find_working_model(client)
+    # Determine model: default to gemini-3.1-flash-image-preview
+    model = args.model or IMAGE_MODELS[0]
 
     # Build prompt with aspect/size hints
     enhanced_prompt = _build_enhanced_prompt(args.prompt, args.aspect, args.size)

@@ -52,7 +52,7 @@ python3 .claude/skills/gemini-image/scripts/generate_image.py "trending web UI b
 | `-r, --reference` | - | Reference image path (can be used multiple times) |
 | `--search` | off | Enable Google Search tool (for trend/style references) |
 | `-n, --count` | 1 | Number of images to generate (max 5) |
-| `--model` | auto-selected | Gemini model to use (default: gemini-3.1-flash-image-preview) |
+| `--model` | `gemini-3.1-flash-image-preview` | Gemini model to use (default: Flash 3.1, no need to specify) |
 
 ## Workflow
 
