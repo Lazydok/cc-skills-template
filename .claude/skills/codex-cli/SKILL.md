@@ -113,7 +113,18 @@ codex exec --ephemeral -s read-only \
   "Quick: is this function O(n) or O(n^2)? $(cat algo.py)"
 ```
 
-### Pattern 7: With Timeout (Recommended for Sub-Agent Use)
+### Pattern 7: Full-Access Mode (No Sandbox Restrictions)
+
+```bash
+timeout 120 codex exec --ephemeral -s danger-full-access -o /tmp/result.txt \
+  "Install dependencies, run tests, and fix any failures in src/feature.py"
+```
+
+Uses `danger-full-access` sandbox: full filesystem read/write, unrestricted shell, and network access. Approval is automatically set to `never` — no interactive prompts. **Do NOT combine with `--full-auto`** — it overrides `-s` to `workspace-write`, defeating the purpose.
+
+Use cases: tasks requiring network access (API calls, package installs), writing files outside workdir, or running arbitrary shell commands.
+
+### Pattern 8: With Timeout (Recommended for Sub-Agent Use)
 
 ```bash
 timeout 120 codex exec --ephemeral -s read-only -o /tmp/result.txt \
@@ -130,13 +141,14 @@ Always wrap with `timeout` when invoking from a teammate or script — Codex can
 | `--ephemeral` | No session persistence (clean, no disk clutter) |
 | `-s read-only` | **Safest** — can read files, cannot modify |
 | `-s workspace-write` | Default — can write to workdir and /tmp |
+| `-s danger-full-access` | **No restrictions** — full filesystem, shell, network; approval auto-set to `never` |
 | `-o FILE` | Write last message to file (cleanest output) |
 | `--json` | JSONL events to stdout (for programmatic parsing) |
 | `--output-schema FILE` | Enforce JSON Schema on response |
 | `-c key=value` | Config override (e.g., `model_reasoning_effort="low"`) |
 | `-i FILE` | Attach image(s) to prompt (repeatable) |
 | `-p PROFILE` | Use named config profile from config.toml |
-| `--full-auto` | Auto-approve + workspace-write sandbox — do NOT combine with `-s read-only` (it overrides sandbox to workspace-write) |
+| `--full-auto` | Auto-approve + workspace-write sandbox — **overrides any `-s` flag** to workspace-write (do NOT combine with `-s read-only` or `-s danger-full-access`) |
 
 ## JSONL Output Parsing (`--json`)
 
@@ -194,7 +206,7 @@ CODEX_REVIEW=$(cat /tmp/codex_review.md)
 - **MCP startup overhead** — ~2-3s per call for configured MCP servers
 - **No separate context channel** — Code must be embedded in the prompt itself
 - **Exit code 0 even on model errors** — Model handles shell failures internally; wrap with `timeout` to catch hangs
-- **`--full-auto` overrides sandbox** — If you need read-only safety, do NOT use `--full-auto`; it forces `workspace-write`
+- **`--full-auto` overrides sandbox** — Forces `workspace-write` regardless of `-s` flag. For `read-only` use `-s read-only` alone; for full access use `-s danger-full-access` alone (approval is auto-set to `never`)
 
 ## Detailed Reference
 
