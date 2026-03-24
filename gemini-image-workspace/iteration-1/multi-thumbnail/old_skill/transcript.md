@@ -11,7 +11,7 @@
 ## Command Used
 
 ```bash
-export GEMINI_API_KEY="***REDACTED_API_KEY***"
+export GEMINI_API_KEY="$GEMINI_API_KEY"  # Set your API key as an environment variable before running
 
 python3 /home/lazydok/src/cc-skills-template/gemini-image-workspace/skill-snapshot/scripts/generate_image.py \
   "Modern blog post thumbnail for 'AI and the Future' theme, clean minimalist design, futuristic gradient colors, abstract neural network patterns, sleek typography space, dark background with glowing blue and purple accents, professional tech blog aesthetic, 16:9 composition" \

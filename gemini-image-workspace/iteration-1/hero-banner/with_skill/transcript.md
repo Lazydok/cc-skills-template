@@ -32,7 +32,7 @@ Used the Gemini API directly via inline Python with:
 
 ### 5. Command Used
 ```bash
-export GEMINI_API_KEY="***REDACTED_API_KEY***"
+export GEMINI_API_KEY="$GEMINI_API_KEY"  # Set your API key as an environment variable before running
 python3 -c "
 import os, sys
 from pathlib import Path

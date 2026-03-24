@@ -16,7 +16,7 @@ Following the SKILL.md's recommended prompt pattern for web UI icons/logos:
 
 ## Command Executed
 ```bash
-export GEMINI_API_KEY="***REDACTED_API_KEY***"
+export GEMINI_API_KEY="$GEMINI_API_KEY"  # Set your API key as an environment variable before running
 
 python3 /home/lazydok/src/cc-skills-template/gemini-image-workspace/skill-snapshot/scripts/generate_image.py \
   "Minimalist flat icon for a project logo, blue color scheme, clean geometric shape, on white background, 256x256, no text" \

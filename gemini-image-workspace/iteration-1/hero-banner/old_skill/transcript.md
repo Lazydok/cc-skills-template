@@ -10,7 +10,7 @@
 ## Command Executed (Attempt 1)
 
 ```bash
-export GEMINI_API_KEY="***REDACTED_API_KEY***"
+export GEMINI_API_KEY="$GEMINI_API_KEY"  # Set your API key as an environment variable before running
 python3 /home/lazydok/src/cc-skills-template/gemini-image-workspace/skill-snapshot/scripts/generate_image.py \
   "Wide hero banner for landing page, dark theme atmosphere, gradient from deep purple to electric blue, smooth flowing abstract shapes, modern tech aesthetic, 16:9 aspect ratio, web-ready, high quality" \
   -o /home/lazydok/src/cc-skills-template/gemini-image-workspace/iteration-1/hero-banner/old_skill/outputs/hero-banner.png \

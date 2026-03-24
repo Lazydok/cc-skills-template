@@ -5,7 +5,7 @@ Generate 3 blog post thumbnail variations on the theme "AI and the Future" with 
 
 ## Environment Setup
 ```bash
-export GEMINI_API_KEY="***REDACTED_API_KEY***"
+export GEMINI_API_KEY="$GEMINI_API_KEY"  # Set your API key as an environment variable before running
 ```
 
 ## Attempt 1: Using the skill script directly
