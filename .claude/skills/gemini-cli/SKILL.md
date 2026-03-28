@@ -16,7 +16,7 @@ Invoke Google Gemini CLI in non-interactive mode as a sub-agent from Claude Code
 
 ## Prerequisites
 
-**Install**: `npm install -g @anthropic-ai/gemini-cli` or `npm install -g @anthropic-ai/gemini` (requires Node.js 20+)
+**Install**: `npm install -g @google/gemini-cli` (requires Node.js 20+)
 **Auth**: `gemini` — first run triggers OAuth browser login (cached after first use)
 **Verify**: `gemini --version`
 
@@ -24,7 +24,7 @@ Before invoking Gemini in scripts or teammate prompts, always check availability
 
 ```bash
 if ! command -v gemini &>/dev/null; then
-  echo "gemini CLI not installed. Install: npm install -g @anthropic-ai/gemini-cli"
+  echo "gemini CLI not installed. Install: npm install -g @google/gemini-cli"
   exit 1
 fi
 ```
