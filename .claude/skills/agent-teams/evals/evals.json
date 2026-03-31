@@ -39,7 +39,7 @@
         "TeamCreate is called",
         "Dedicated reviewer teammates exist for at least 2 of the 3 perspectives: security, performance, correctness",
         "A dedicated xv-codex or cross-verification teammate exists",
-        "Codex CLI invocation is included in a teammate's prompt",
+        "Codex plugin companion script invocation (node codex-companion.mjs) or codex:codex-rescue subagent is included in a teammate's prompt",
         "The /tmp/xv/ artifact directory pattern is used",
         "A synthesizer teammate aggregates the results",
         "All Agent calls include team_name"

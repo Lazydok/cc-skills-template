@@ -298,7 +298,7 @@ Each reviewer writes to a shared findings doc. Lead synthesizes final report.
 
 ## Cross-Verification Rules
 
-External CLI agents (Gemini, Codex) communicate with teammates through **structured artifact files** in `/tmp/xv/`. Load **gemini-cli** and **codex-cli** skills for invocation details.
+External agents (Gemini, Codex) communicate with teammates through **structured artifact files** in `/tmp/xv/`. Load **gemini-cli** skill for Gemini invocation. Codex integration uses the **openai/codex-plugin-cc** plugin companion script (`node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs"`).
 
 | Task Type | Required Ensemble |
 |-----------|-------------------|
@@ -312,11 +312,11 @@ External CLI agents (Gemini, Codex) communicate with teammates through **structu
 
 **VLM note**: For screenshot/image analysis, Claude reads images natively via Read tool. Gemini CLI does not support direct image input — use Gemini for frontend code review and web search for latest UI patterns instead.
 
-**Pattern**: `xv-*` teammate creates `/tmp/xv/{task}/`, invokes CLI, drops artifact, sends summary via `SendMessage`. Synthesizer reads all artifacts and produces unified verdict.
+**Pattern**: `xv-*` teammate creates `/tmp/xv/{task}/`, invokes the Codex companion script or Gemini CLI, drops artifact, sends summary via `SendMessage`. Synthesizer reads all artifacts and produces unified verdict. For standalone Codex delegation without a full team, use `Agent(subagent_type="codex:codex-rescue", ...)`.
 
 **Confidence**: CRITICAL (all agree) → must fix; HIGH (2/3) → investigate; MEDIUM (1/3) → likely false positive.
 
-**Full details**: Team patterns, artifact format, CLI invocation examples, gate logic → **[references/cross-verification.md](references/cross-verification.md)**
+**Full details**: Team patterns, artifact format, plugin invocation examples, gate logic → **[references/cross-verification.md](references/cross-verification.md)**
 
 ## Prerequisites
 

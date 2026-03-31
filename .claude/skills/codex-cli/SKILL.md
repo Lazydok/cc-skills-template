@@ -1,214 +1,229 @@
 ---
 name: codex-cli
 description: >
-  Invoke OpenAI Codex CLI as a sub-agent for independent code review,
-  logical analysis, or cross-verification. Use when needing "second opinion from Codex",
-  "Codex review", "cross-verify with Codex", "independent code analysis", or when
-  agent-teams cross-verification requires a non-Claude perspective for code correctness.
-  Codex CLI runs via `codex exec` with read-only sandbox and structured output support.
+  Invoke OpenAI Codex via the codex plugin for independent code review,
+  logical analysis, task delegation, or cross-verification. Use when needing
+  "second opinion from Codex", "Codex review", "cross-verify with Codex",
+  "independent code analysis", or when agent-teams cross-verification requires
+  a non-Claude perspective for code correctness. Provides slash commands,
+  companion script for teammates, and subagent integration.
   Triggers on: "codex", "codex-cli", "second opinion codex", "cross-verify codex",
   "independent review", "openai review", "gpt review".
 ---
 
-# Codex CLI Sub-Agent
+# Codex CLI — Plugin Integration
 
-Invoke OpenAI Codex CLI in exec mode as a sub-agent for independent code analysis.
+Invoke Codex through the `openai/codex` plugin for code review, task delegation, and cross-verification.
 
 ## Prerequisites
 
-**Install**: `npm install -g @openai/codex` (requires Node.js 22+)
-**Auth**: `codex login` — authenticates via ChatGPT browser login (cached after first use)
-**Verify**: `codex --version` (minimum v0.1.0+)
+Run `/codex:setup` to check installation, authentication, and optionally enable the stop-time review gate. The setup command reports readiness and next steps.
 
-Before invoking Codex in scripts or teammate prompts, always check availability:
-
-```bash
-if ! command -v codex &>/dev/null; then
-  echo "codex CLI not installed. Install: npm install -g @openai/codex"
-  exit 1
-fi
+```
+/codex:setup
+/codex:setup --enable-review-gate
 ```
 
-## Core Invocation Patterns
+## Core Commands
 
-### Pattern 1: Read-Only Analysis (~5-15s)
+### Code Review
 
-```bash
-codex exec --ephemeral -s read-only -o /tmp/result.txt \
-  "Review src/models/user.py for logic errors. Output as markdown."
-cat /tmp/result.txt
+Reviews local git changes using the built-in Codex reviewer. Does not accept custom focus text — use adversarial review for that.
+
+```
+/codex:review
+/codex:review --base main
+/codex:review --scope working-tree
+/codex:review --scope branch --base feature-branch
 ```
 
-Flags: `--ephemeral` (no session files), `-s read-only` (safe sandbox), `-o FILE` (clean output to file). Exec mode is non-interactive — no approval prompts needed.
+Flags: `--wait` (block until done), `--background` (return immediately), `--base <ref>`, `--scope <auto|working-tree|branch>`.
 
-### Pattern 2: Structured JSON Output
+### Adversarial Review
+
+Deep review with custom focus areas. Supports structured JSON output with verdict/findings/next_steps.
+
+```
+/codex:adversarial-review
+/codex:adversarial-review security injection auth
+/codex:adversarial-review --base main concurrency edge-cases
+```
+
+Same flags as review, plus positional focus text.
+
+### Task Delegation (Rescue)
+
+Delegate work to Codex — diagnosis, fixes, research, implementation.
+
+```
+/codex:rescue fix the failing test in tests/test_auth.py
+/codex:rescue --model spark diagnose why the API returns 500
+/codex:rescue --effort high implement input validation for the signup form
+/codex:rescue --resume        # continue previous Codex thread
+/codex:rescue --fresh          # force new thread
+```
+
+Flags: `--background`, `--wait`, `--resume` / `--fresh`, `--model <name|spark>`, `--effort <none|minimal|low|medium|high|xhigh>`, `--write` (default for task).
+
+Note: `/codex:rescue --resume` maps internally to the companion script's `--resume-last` flag. Similarly, `--fresh` prevents `--resume-last` from being added.
+
+Model alias: `spark` maps to `gpt-5.3-codex-spark`.
+
+### Job Management
+
+```
+/codex:status              # all active jobs
+/codex:status <job-id>     # single job
+/codex:status <job-id> --wait   # poll until complete
+/codex:result <job-id>     # fetch completed output
+/codex:cancel <job-id>     # cancel active job
+```
+
+## Programmatic Integration
+
+### Subagent (from Claude Code)
+
+Use `Agent(subagent_type="codex:codex-rescue")` to delegate to Codex programmatically:
+
+```python
+Agent(
+  subagent_type="codex:codex-rescue",
+  prompt="Diagnose why tests/test_order.py::test_cancel fails",
+  description="Codex diagnosis of test failure"
+)
+```
+
+The rescue subagent is a thin forwarder — it invokes one `task` call and returns the output unchanged.
+
+### Companion Script (for Teammates / Bash)
+
+Teammates invoke Codex through the companion script:
 
 ```bash
-cat > /tmp/schema.json << 'SCHEMA'
-{
-  "type": "object",
-  "properties": {
-    "summary": { "type": "string" },
-    "bugs": { "type": "array", "items": { "type": "string" } },
-    "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] }
-  },
-  "required": ["summary", "bugs", "severity"],
-  "additionalProperties": false
+COMPANION="${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs"
+
+# Review
+node "$COMPANION" review --base main --scope auto
+
+# Adversarial review with focus
+node "$COMPANION" adversarial-review --base main "security injection"
+
+# Task
+node "$COMPANION" task "diagnose the test failure in tests/test_auth.py" --write
+
+# Task with model and effort
+node "$COMPANION" task --model spark --effort high "fix the broken migration"
+
+# Resume previous thread
+node "$COMPANION" task --resume-last "apply the top recommendation"
+
+# Job management
+node "$COMPANION" status
+node "$COMPANION" result <job-id>
+node "$COMPANION" cancel <job-id>
+```
+
+### Agent Teams Cross-Verification
+
+A teammate uses the companion script for independent analysis, saving artifacts to `/tmp/xv/`:
+
+```bash
+COMPANION="${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs"
+mkdir -p /tmp/xv/review/
+
+# Check availability first
+node "$COMPANION" setup --json | jq -e '.ready' > /dev/null 2>&1 || {
+  echo "# Codex Review — SKIPPED\nStatus: UNAVAILABLE" > /tmp/xv/review/codex.md
+  exit 0
 }
-SCHEMA
 
-codex exec --ephemeral -s read-only --json \
-  --output-schema /tmp/schema.json \
-  -o /tmp/analysis.txt \
-  "Analyze src/services/order_processor.py for potential bugs"
+# Run adversarial review and save artifact
+node "$COMPANION" adversarial-review --base main "correctness edge-cases security" \
+  > /tmp/xv/review/codex.md 2>&1
 ```
 
-`--output-schema` enforces JSON Schema on the response. Schema MUST include `"additionalProperties": false`.
+## Prompt Composition (GPT-5.4)
 
-### Pattern 3: Code Review (Branch Diff, ~30-120s)
+When crafting prompts for `/codex:rescue` tasks, use XML block structure for best results. The `gpt-5-4-prompting` plugin skill provides the full reference.
 
-```bash
-codex exec review --base main --ephemeral --full-auto --json \
-  -o /tmp/review.txt \
-  "Focus on correctness and potential runtime errors"
-cat /tmp/review.txt
+### Key Blocks
+
+| Block | When to Use |
+|-------|-------------|
+| `<task>` | Always — describe the job and expected end state |
+| `<structured_output_contract>` | When response shape matters |
+| `<compact_output_contract>` | When you want concise prose |
+| `<default_follow_through_policy>` | Codex should act without asking routine questions |
+| `<completeness_contract>` | Multi-step tasks that must not stop early |
+| `<verification_loop>` | When correctness matters |
+| `<missing_context_gating>` | Prevent guessing missing facts |
+| `<grounding_rules>` | Review/research — ground claims in evidence |
+| `<action_safety>` | Write-capable tasks — keep changes scoped |
+| `<dig_deeper_nudge>` | Review — check for second-order failures |
+| `<research_mode>` | Exploration/comparison — separate facts vs inferences |
+| `<citation_rules>` | Research — back claims with references |
+
+### Example: Diagnosis Prompt
+
+```xml
+<task>
+Diagnose why tests/test_auth.py::test_login_expired fails.
+Use repository context and tools to identify the root cause.
+</task>
+
+<compact_output_contract>
+Return: 1. root cause  2. evidence  3. smallest safe next step
+</compact_output_contract>
+
+<verification_loop>
+Verify the proposed root cause matches observed evidence before finalizing.
+</verification_loop>
 ```
 
-Review targets: `--base BRANCH`, `--commit SHA`, `--uncommitted`.
+## Review Output Format
 
-### Pattern 4: Inline Code via Heredoc
+Adversarial reviews return structured JSON. Note: the plugin uses `approve`/`needs-attention` verdicts, while cross-verification artifacts use `APPROVE`/`REQUEST_CHANGES` — synthesizers should handle this mapping.
 
-```bash
-codex exec --ephemeral -s read-only -o /tmp/result.txt \
-  "$(cat <<'EOF'
-Review this module for edge cases and logic errors:
-
-$(cat src/feature.py)
-
-Focus on: 1) Off-by-one errors 2) Null handling 3) Concurrency issues
-EOF
-)"
-cat /tmp/result.txt
+```json
+{
+  "verdict": "approve | needs-attention",
+  "summary": "...",
+  "findings": [{
+    "severity": "critical|high|medium|low",
+    "title": "...", "body": "...",
+    "file": "...", "line_start": 1, "line_end": 10,
+    "confidence": 0.9, "recommendation": "..."
+  }],
+  "next_steps": ["..."]
+}
 ```
 
-**Critical**: When a prompt argument is given, stdin is silently ignored. Always embed code in the prompt string via heredoc or `$(cat file)`. To read from stdin instead, omit the positional argument or pass `-` as the prompt.
+## Result Handling
 
-### Pattern 5: Image-Assisted Review
-
-```bash
-codex exec --ephemeral -s read-only \
-  -i /tmp/screenshots/error_screenshot.png \
-  -o /tmp/result.txt \
-  "This screenshot shows a UI rendering bug. What CSS/layout issues could cause this?"
-```
-
-`-i/--image` attaches images to the prompt. Useful for visual bug reports, UI review, and diagram analysis. Multiple images supported: `-i img1.png -i img2.png`.
-
-### Pattern 6: Low-Cost Quick Query
-
-```bash
-codex exec --ephemeral -s read-only \
-  -c 'model_reasoning_effort="low"' \
-  -o /tmp/result.txt \
-  "Quick: is this function O(n) or O(n^2)? $(cat algo.py)"
-```
-
-### Pattern 7: Full-Access Mode (No Sandbox Restrictions)
-
-```bash
-timeout 120 codex exec --ephemeral -s danger-full-access -o /tmp/result.txt \
-  "Install dependencies, run tests, and fix any failures in src/feature.py"
-```
-
-Uses `danger-full-access` sandbox: full filesystem read/write, unrestricted shell, and network access. Approval is automatically set to `never` — no interactive prompts. **Do NOT combine with `--full-auto`** — it overrides `-s` to `workspace-write`, defeating the purpose.
-
-Use cases: tasks requiring network access (API calls, package installs), writing files outside workdir, or running arbitrary shell commands.
-
-### Pattern 8: With Timeout (Recommended for Sub-Agent Use)
-
-```bash
-timeout 120 codex exec --ephemeral -s read-only -o /tmp/result.txt \
-  "Review this code for security issues: $(cat src/auth.py)" \
-  || echo "CODEX_TIMEOUT"
-```
-
-Always wrap with `timeout` when invoking from a teammate or script — Codex can hang on large files or complex prompts.
-
-## Key Flags
-
-| Flag | Purpose |
-|------|---------|
-| `--ephemeral` | No session persistence (clean, no disk clutter) |
-| `-s read-only` | **Safest** — can read files, cannot modify |
-| `-s workspace-write` | Default — can write to workdir and /tmp |
-| `-s danger-full-access` | **No restrictions** — full filesystem, shell, network; approval auto-set to `never` |
-| `-o FILE` | Write last message to file (cleanest output) |
-| `--json` | JSONL events to stdout (for programmatic parsing) |
-| `--output-schema FILE` | Enforce JSON Schema on response |
-| `-c key=value` | Config override (e.g., `model_reasoning_effort="low"`) |
-| `-i FILE` | Attach image(s) to prompt (repeatable) |
-| `-p PROFILE` | Use named config profile from config.toml |
-| `--full-auto` | Auto-approve + workspace-write sandbox — **overrides any `-s` flag** to workspace-write (do NOT combine with `-s read-only` or `-s danger-full-access`) |
-
-## JSONL Output Parsing (`--json`)
-
-```bash
-# Extract just the agent message text
-codex exec --json --ephemeral -s read-only "prompt" 2>/dev/null \
-  | jq -r 'select(.type == "item.completed" and .item.type == "agent_message") | .item.text'
-```
-
-Key event types in JSONL:
-- `thread.started` — Session ID
-- `item.completed` + `type: "agent_message"` — **The response text** (in `.item.text`)
-- `item.completed` + `type: "command_execution"` — Shell command results
-- `turn.completed` — Token usage: `{input_tokens, cached_input_tokens, output_tokens}`
+- Preserve verdict, findings, and next_steps structure from Codex output
+- Present findings ordered by severity
+- Keep file paths and line numbers exactly as reported
+- After presenting review findings, **STOP** — do not auto-apply fixes. Ask the user which issues to fix
+- If Codex fails or was never invoked, report the failure — do not generate a substitute answer
+- If setup/auth is required, direct to `/codex:setup`
 
 ## Performance
 
-| Scenario | Time | Input Tokens |
-|----------|------|-------------|
-| Simple Q&A | ~3-5s | ~7-11K |
-| File analysis | ~5-15s | ~10-45K |
-| Branch review | ~30-120s | ~50-150K |
-
-**Overhead**: CLAUDE.md (~5K tokens) read on every call + MCP server startup (~2-3s).
-
-## Agent Teams Integration
-
-A teammate invokes Codex for cross-verification via Bash tool:
-
-```bash
-# Always check availability first
-if ! command -v codex &>/dev/null; then
-  echo "CODEX_NOT_AVAILABLE: skipping cross-verification"
-  # Write a placeholder artifact so synthesizer knows Codex was unavailable
-  echo "# Codex Review — SKIPPED\nStatus: UNAVAILABLE\nReason: codex CLI not installed" \
-    > /tmp/codex_review.md
-else
-  timeout 120 codex exec --ephemeral -s read-only -o /tmp/codex_review.md \
-    "$(cat <<'PROMPT'
-Review this implementation for correctness, edge cases, and security:
-
-$(cat src/feature.py)
-
-Output as markdown with severity levels: [CRITICAL/HIGH/MEDIUM/LOW]
-PROMPT
-  )" || echo "# Codex Review — TIMEOUT" > /tmp/codex_review.md
-fi
-CODEX_REVIEW=$(cat /tmp/codex_review.md)
-```
+| Scenario | Time |
+|----------|------|
+| Native review | ~30-60s |
+| Adversarial review | ~30-120s |
+| Task (simple) | ~10-30s |
+| Task (complex) | ~60-300s |
 
 ## Limitations
 
-- **Stdin ignored with prompt arg** — Must embed code in prompt string (heredoc pattern), or omit the positional arg and pass `-` to read from stdin
-- **CLAUDE.md always read** — ~5K tokens consumed per call automatically
-- **MCP startup overhead** — ~2-3s per call for configured MCP servers
-- **No separate context channel** — Code must be embedded in the prompt itself
-- **Exit code 0 even on model errors** — Model handles shell failures internally; wrap with `timeout` to catch hangs
-- **`--full-auto` overrides sandbox** — Forces `workspace-write` regardless of `-s` flag. For `read-only` use `-s read-only` alone; for full access use `-s danger-full-access` alone (approval is auto-set to `never`)
+- `/codex:review` does not accept custom focus text — use `/codex:adversarial-review` for focused reviews
+- Codex reads CLAUDE.md on every call (~5K token overhead)
+- MCP server startup adds ~2-3s per call
+- Background tasks require polling via `/codex:status` for completion
+- Thread resumption (`--resume`) requires a previous task thread in the same workspace
 
 ## Detailed Reference
 
-- **[references/invocation-patterns.md](references/invocation-patterns.md)** — Full exec flags, review mode details, sandbox permissions, MCP server mode, error handling
-- **[references/review-patterns.md](references/review-patterns.md)** — Code review prompts, security audit templates, test gap analysis patterns
+- **[references/plugin-integration.md](references/plugin-integration.md)** — Companion script reference, teammate patterns, prompt blocks, recipes, job lifecycle, error handling

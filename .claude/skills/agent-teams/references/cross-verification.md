@@ -18,12 +18,14 @@
 
 ## Overview
 
-Cross-verification uses mandatory ensemble patterns: CLI agents (Gemini, Codex) are invoked as terminal sub-processes that drop structured artifact files. Claude Code teammates read those files to synthesize findings. This creates an asynchronous, artifact-based communication channel between different AI models.
+Cross-verification uses mandatory ensemble patterns: external agents (Gemini CLI, Codex plugin) are invoked as sub-processes that drop structured artifact files. Claude Code teammates read those files to synthesize findings. This creates an asynchronous, artifact-based communication channel between different AI models.
+
+Codex integration uses the **openai/codex-plugin-cc** plugin companion script, which provides structured task execution, review commands, and XML-based prompt composition (gpt-5-4-prompting style).
 
 ## Prerequisites
 
 - **gemini-cli** skill loaded — `gemini --version` must work without prompts
-- **codex-cli** skill loaded — `codex --version` must work without prompts
+- **Codex plugin installed** — `/codex:setup` passes; `CLAUDE_PLUGIN_ROOT` env var is set
 - Artifact directory created: `mkdir -p /tmp/xv/{task-name}/`
 
 ## MUST Rules — Required Ensembles
@@ -42,19 +44,19 @@ Cross-verification uses mandatory ensemble patterns: CLI agents (Gemini, Codex) 
 **Important — VLM capabilities**:
 - **Claude**: Reads images natively via Read tool (screenshots, diagrams, UI captures). Primary VLM agent.
 - **Gemini CLI**: Does NOT support direct image input via CLI flags. Use for frontend code review and web search only.
-- **Codex CLI**: No VLM capability. Use for code logic and algorithmic analysis.
+- **Codex plugin**: No VLM capability. Use for code logic and algorithmic analysis.
 
 ## Team Patterns
 
 ### Team Pattern: Code Analysis / Algorithm / Math
 
-**MUST include Codex cross-check.** The `xv-codex` teammate runs Codex independently, drops artifacts for the synthesizer.
+**MUST include Codex cross-check.** The `xv-codex` teammate runs the Codex companion script independently, drops artifacts for the synthesizer.
 
 ```
 Team (5+ teammates):
 1. "implementer": Write/modify code (general-purpose)
 2. "claude-analyst": Claude's own deep analysis (Explore)
-3. "xv-codex": Run Codex review, drop artifacts (general-purpose)
+3. "xv-codex": Run Codex review via plugin, drop artifacts (general-purpose)
 4. "test-dev": Write/run tests (general-purpose)
 5. "synthesizer": Read Claude + Codex artifacts → unified verdict (general-purpose)
 ```
@@ -63,21 +65,29 @@ The `xv-codex` teammate prompt includes:
 ```
 You are a cross-verification agent. Your job:
 1. mkdir -p /tmp/xv/code-review/
-2. Run Codex CLI to independently analyze the target code:
-   codex exec --ephemeral --full-auto -s read-only -o /tmp/xv/code-review/codex_review.md \
-     "$(cat <<'EOF'
-   You are performing an independent code review. Write your full review
-   to the output. Use this format:
+2. Run the Codex companion script to independently analyze the target code:
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" task "$(cat <<'EOF'
+   <task>
+   You are performing an independent code review for cross-verification.
+   Another AI has already reviewed this code — your job is to find things it might have missed.
+   Review target: {description of what to review}
+   </task>
+   <structured_output_contract>
    # Codex Review — {filename}
+   Date: YYYY-MM-DD HH:MM
    Status: PASS | FAIL | PASS_WITH_COMMENTS
    ## Findings
    - [SEVERITY] Line N: Description
+   ## Summary
+   1-3 sentences.
    ## Verdict: APPROVE | REQUEST_CHANGES
-
-   Review target: {description of what to review}
-   $(cat {target_file})
+   </structured_output_contract>
+   <grounding_rules>
+   - Only report findings you can trace to specific lines
+   - Do not speculate about code outside the review target
+   </grounding_rules>
    EOF
-   )"
+   )" 2>&1 | tee /tmp/xv/code-review/codex_review.md
 3. Read /tmp/xv/code-review/codex_review.md to verify it was written
 4. Send the verdict summary to the synthesizer via SendMessage
 ```
@@ -162,8 +172,8 @@ Dependencies:
 ├── {task-name}/
 │   ├── plan_draft.md          # Architect's plan (input for critics)
 │   ├── claude_review.md       # Claude teammate's review
-│   ├── codex_review.md        # Codex CLI output artifact
-│   ├── codex_critique.md      # Codex CLI critique artifact
+│   ├── codex_review.md        # Codex plugin output artifact
+│   ├── codex_critique.md      # Codex plugin critique artifact
 │   ├── gemini_review.md       # Gemini CLI output artifact
 │   ├── gemini_critique.md     # Gemini CLI critique artifact
 │   ├── gemini_research.md     # Gemini web search results
@@ -219,17 +229,20 @@ The Claude teammate reviews using native Read/Grep tools and writes:
 
 ### Step 3: Codex Review (xv-codex teammate)
 
-The xv-codex teammate runs Codex CLI and drops the artifact:
+The xv-codex teammate runs the Codex companion script and drops the artifact:
 
 ```bash
 TARGET="src/services/order_processor.py"
 
-codex exec --ephemeral --full-auto -s read-only -o /tmp/xv/code-review/codex_review.md \
-  "$(cat <<'EOF'
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" task "$(cat <<'EOF'
+<task>
 You are performing an independent code review for cross-verification.
 Another AI has already reviewed this code — your job is to find things it might have missed.
 
-## Output Format (MUST follow exactly)
+Review target: order_processor.py
+$(cat $TARGET)
+</task>
+<structured_output_contract>
 # Codex Review — order_processor.py
 Date: $(date '+%Y-%m-%d %H:%M')
 Status: PASS | FAIL | PASS_WITH_COMMENTS
@@ -241,20 +254,23 @@ Status: PASS | FAIL | PASS_WITH_COMMENTS
 1-3 sentences.
 
 ## Verdict: APPROVE | REQUEST_CHANGES
-
-## Review Target
-$(cat $TARGET)
-
-## Review Criteria
-1. Logic errors, off-by-one, race conditions
-2. Edge cases: null/empty, boundary values, overflow
-3. Security: injection, auth bypass, data exposure
-4. Mathematical correctness of any formulas
+</structured_output_contract>
+<verification_loop>
+1. Check each function for logic errors, off-by-one, race conditions
+2. Check edge cases: null/empty, boundary values, overflow
+3. Check security: injection, auth bypass, data exposure
+4. Verify mathematical correctness of any formulas
+</verification_loop>
+<grounding_rules>
+- Only report findings you can trace to specific lines in the source
+- Do not speculate about code outside the review target
+- If unsure about severity, default to MEDIUM
+</grounding_rules>
 EOF
-)"
+)" 2>&1 | tee /tmp/xv/code-review/codex_review.md
 
 # Verify artifact was written
-cat /tmp/xv/code-review/codex_review.md | head -5
+head -5 /tmp/xv/code-review/codex_review.md
 ```
 
 ### Step 4: Synthesis (synthesizer teammate)
@@ -379,15 +395,15 @@ The architect teammate writes the plan to the artifact directory:
 
 **Codex critic** (xv-codex-critic teammate):
 ```bash
-codex exec --ephemeral --full-auto -s read-only -o /tmp/xv/plan-review/codex_critique.md \
-  "$(cat <<'EOF'
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" task "$(cat <<'EOF'
+<task>
 You are an adversarial critic reviewing a software design plan.
 Your job is to find every flaw, risk, and oversight. Be thorough and skeptical.
 
 ## Plan to Review
 $(cat /tmp/xv/plan-review/plan_draft.md)
-
-## Output Format
+</task>
+<structured_output_contract>
 # Codex Critique
 Date: $(date '+%Y-%m-%d %H:%M')
 Status: PASS | FAIL
@@ -403,8 +419,14 @@ Status: PASS | FAIL
 
 ## Verdict: APPROVE | REJECT
 If REJECT, list exactly what must change.
+</structured_output_contract>
+<dig_deeper_nudge>
+- Challenge every assumption in the plan
+- Consider failure modes and operational concerns
+- Look for missing error handling and rollback strategies
+</dig_deeper_nudge>
 EOF
-)"
+)" 2>&1 | tee /tmp/xv/plan-review/codex_critique.md
 ```
 
 **Gemini critic** (xv-gemini-critic teammate):
@@ -460,7 +482,8 @@ mkdir -p /tmp/xv/dual-review/
 cat target.py | gemini -y -p "Review..." -o text 2>/dev/null > /tmp/xv/dual-review/gemini_review.md &
 PID_GEMINI=$!
 
-codex exec --ephemeral --full-auto -s read-only -o /tmp/xv/dual-review/codex_review.md "Review $(cat target.py)" &
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" task "Review $(cat target.py)" \
+  2>&1 > /tmp/xv/dual-review/codex_review.md &
 PID_CODEX=$!
 
 # Wait with timeout
@@ -471,19 +494,40 @@ timeout 120 bash -c "wait $PID_CODEX" || echo "Codex timed out"
 ls -la /tmp/xv/dual-review/
 ```
 
+## Standalone Codex Delegation
+
+For cases where you need a Codex review without spawning a full xv-codex teammate, use the plugin's rescue subagent directly:
+
+```
+Agent(subagent_type="codex:codex-rescue", prompt="Review the changes in src/auth/middleware.py for security issues", description="Codex security review")
+```
+
+For structured reviews against a branch diff:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" review --base main
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" adversarial-review --base main "Focus on auth bypass vectors"
+```
+
+The review commands output structured JSON with: verdict (`approve`/`needs-attention`), summary, findings (severity/title/body/file/line/confidence/recommendation), and next_steps.
+
+**Verdict mapping**: The plugin's structured review uses `approve`/`needs-attention`, while the artifact standard uses `APPROVE`/`REQUEST_CHANGES`. Synthesizers should normalize: `approve` → `APPROVE`, `needs-attention` → `REQUEST_CHANGES`.
+
 ## Capability Matrix
 
-| Capability | Claude (native) | Gemini CLI | Codex CLI |
-|-----------|-----------------|------------|-----------|
+| Capability | Claude (native) | Gemini CLI | Codex Plugin |
+|-----------|-----------------|------------|--------------|
 | Code logic review | Excellent | Good | Excellent |
 | Mathematical/algorithmic verification | Excellent | Fair | Excellent |
 | Security audit | Excellent | Good | Very Good |
 | Web search / latest docs | Via WebSearch tool | Built-in (`-y` flag) | No |
 | UI/Frontend code review | Good | Good (code review + web search) | Good |
 | VLM / Screenshot analysis | Excellent (native Read) | Not supported via CLI | Not supported |
-| Structured output | Via tools | `-o json` envelope | `--output-schema` (enforced) |
-| Branch diff review | Via git tools | Manual | Built-in (`codex exec review`) |
+| Structured output | Via tools | `-o json` envelope | Structured review JSON schema (verdict, findings, next_steps) |
+| Branch diff review | Via git tools | Manual | Built-in (`adversarial-review --base`) |
 | Plan/design critique | Excellent | Good | Very Good |
+| Job management | N/A | N/A | Thread resumption, job tracking via companion script |
+| XML prompt composition | N/A | N/A | `<task>`, `<structured_output_contract>`, `<verification_loop>`, `<grounding_rules>`, `<dig_deeper_nudge>` |
 | Speed | Instant (in-process) | ~5-12s per call | ~5-15s per call |
 
 ## Best Practices
@@ -491,8 +535,11 @@ ls -la /tmp/xv/dual-review/
 1. **Always create `/tmp/xv/{task}/` first** — artifacts need a directory
 2. **Use standard artifact format** — enables automated synthesis
 3. **Run CLI calls in parallel** — `&` + `wait` pattern, ~40% faster
-4. **Set timeouts** — `timeout 60 gemini ...` and `timeout 120 codex exec ...`
-5. **Verify artifacts after CLI call** — `cat /tmp/xv/.../file.md | head -5`
+4. **Set timeouts** — `timeout 60 gemini ...` and `timeout 120 node ...`
+5. **Verify artifacts after invocation** — `head -5 /tmp/xv/.../file.md`
 6. **xv-* teammates send summary via SendMessage** — don't rely solely on artifacts
 7. **Synthesizer reads ALL artifacts** — never skip a review
 8. **3-way gate for plans is NON-NEGOTIABLE** — no shortcuts on design reviews
+9. **Use XML-structured prompts for Codex** — `<task>`, `<structured_output_contract>`, `<grounding_rules>` improve output quality
+10. **Prefer `adversarial-review` for branch diffs** — returns structured JSON with severity-ranked findings
+11. **Use `codex:codex-rescue` subagent for standalone delegation** — no need to spawn a full teammate for simple Codex tasks
