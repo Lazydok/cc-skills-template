@@ -1,0 +1,41 @@
+{
+  "skill_name": "gpt-image",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create a logo icon for the project main page. Blue color scheme, minimalist feel, around 256x256 size. Save it to public/images/logo.png",
+      "expected_output": "public/images/logo.png file is created and the script runs without errors",
+      "files": [],
+      "assertions": [
+        {"name": "image-file-created", "check": "output directory contains at least one image file (png/jpg/webp)"},
+        {"name": "script-no-error", "check": "transcript shows no ERROR lines and script exited successfully"},
+        {"name": "english-prompt-used", "check": "the command used an English prompt (not Korean) for better quality"},
+        {"name": "square-size-used", "check": "command included --size 1024x1024 (square aspect for logo/icon)"},
+        {"name": "correct-output-path", "check": "image was saved to the specified output directory (public/images/ via --out-dir)"}
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I need a hero banner image for the top of the landing page. Dark theme with a purple-to-blue gradient background, wide aspect ratio. High quality please. Save to assets/hero-banner.png",
+      "expected_output": "assets/hero-banner.png is generated with 3:2 landscape aspect (1536x1024) at high quality",
+      "files": [],
+      "assertions": [
+        {"name": "image-file-created", "check": "output directory contains at least one image file"},
+        {"name": "landscape-size-set", "check": "command included --size 1536x1024 (3:2 landscape for hero banner)"},
+        {"name": "high-quality-set", "check": "command included --quality high flag"},
+        {"name": "correct-output-path", "check": "image was saved to the specified output directory (assets/)"}
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Generate 3 variations of a blog post thumbnail. Theme is 'AI and the Future', modern feel. Save to thumbnails/ai-future.png",
+      "expected_output": "3 files created under thumbnails/ directory: gpt-img_*_0.png, gpt-img_*_1.png, gpt-img_*_2.png",
+      "files": [],
+      "assertions": [
+        {"name": "multiple-images-created", "check": "output directory contains 3 image files"},
+        {"name": "count-param-used", "check": "command included --n 3 flag"},
+        {"name": "correct-output-path", "check": "images were saved to the specified output directory (thumbnails/ via --out-dir)"}
+      ]
+    }
+  ]
+}
